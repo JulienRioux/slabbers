@@ -40,8 +40,8 @@ export default async function UserCollectionPage({
     (isOwner ? "You" : "Collector");
 
   return (
-    <div className="grid gap-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="grid">
+      <div className="flex items-start justify-between gap-4 py-4 border-b border-border bg-background">
         <div className="flex items-center gap-4">
           {profile?.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element

@@ -35,7 +35,7 @@ export function CardImageCarousel({
   return (
     <div className="grid gap-3">
       <div
-        className="relative mx-auto w-full max-w-[300px] overflow-hidden rounded-none border border-border bg-card"
+        className="relative  mx-auto w-full max-w-[360px] h-fit overflow-hidden rounded-none border border-border bg-card"
         tabIndex={hasMany ? 0 : -1}
         onKeyDown={(event) => {
           if (!hasMany) return;

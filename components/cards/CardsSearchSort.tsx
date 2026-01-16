@@ -139,26 +139,23 @@ export function CardsSearchSort({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon-sm"
-              className="lg:hidden"
-              aria-label="Filters"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[320px] p-0">
-            <SheetHeader className="border-b border-border">
-              <SheetTitle>Filters</SheetTitle>
-            </SheetHeader>
-            <div className="flex-1 overflow-y-auto p-6">
-              <CardsFilters />
-            </div>
-          </SheetContent>
-        </Sheet>
+        <div className="lg:hidden">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon-sm" aria-label="Filters">
+                <SlidersHorizontal className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[320px] p-0">
+              <SheetHeader className="border-b border-border">
+                <SheetTitle>Filters</SheetTitle>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto p-6">
+                <CardsFilters />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </div>
   );

@@ -47,7 +47,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Header />
-        <main className="mx-auto max-w-8xl p-4">{children}</main>
+        <main className="mx-auto max-w-8xl px-4">{children}</main>
       </body>
     </html>
   );
@@ -67,66 +67,64 @@ async function Header() {
   }
 
   return (
-    <header className="border-b border-border bg-background">
-      <div className="mx-auto max-w-7xl p-4">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-semibold tracking-tight"
-          >
-            <IconCards className="h-6 w-6" />
-            <span className="text-xl">Slabbers</span>
-          </Link>
+    <header className="sticky top-0 z-50 h-12 border-b border-border bg-background">
+      <div className="mx-auto flex h-12 max-w-10xl items-center justify-between px-4">
+        <Link
+          href="/"
+          className="flex items-center gap-2 font-semibold tracking-tight"
+        >
+          <IconCards className="h-6 w-6" />
+          <span className="text-xl">Slabbers</span>
+        </Link>
 
-          <nav className="flex items-center gap-2">
-            <NavbarBackButton />
+        <nav className="flex items-center gap-2">
+          <NavbarBackButton />
 
-            <Button asChild variant="outline" aria-label="Browse">
-              <Link href="/browse">
-                <IconCompass className="h-5 w-5" />
-                Browse
-              </Link>
-            </Button>
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" aria-label="Account">
-                    <IconUser className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/add"
-                      className="flex w-full items-center gap-2 text-left"
-                    >
-                      <IconPlus className="h-4 w-4" />
-                      Add card
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href={`/user/${user.id}`}>My collection</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href={`/user/${user.id}/edit`}>Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <form action={signOut} className="w-full">
-                      <button type="submit" className="w-full text-left">
-                        Sign out
-                      </button>
-                    </form>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Link href="/login">
-                <Button aria-label="Login">Login</Button>
-              </Link>
-            )}
-          </nav>
-        </div>
+          <Button asChild variant="outline" aria-label="Browse">
+            <Link href="/browse">
+              <IconCompass className="h-5 w-5" />
+              Browse
+            </Link>
+          </Button>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" aria-label="Account">
+                  <IconUser className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/add"
+                    className="flex w-full items-center gap-2 text-left"
+                  >
+                    <IconPlus className="h-4 w-4" />
+                    Add card
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/user/${user.id}`}>My collection</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/user/${user.id}/edit`}>Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <form action={signOut} className="w-full">
+                    <button type="submit" className="w-full text-left">
+                      Sign out
+                    </button>
+                  </form>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link href="/login">
+              <Button aria-label="Login">Login</Button>
+            </Link>
+          )}
+        </nav>
       </div>
     </header>
   );

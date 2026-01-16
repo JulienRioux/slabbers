@@ -4,9 +4,9 @@ import useSWR from "swr";
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 
+import { CardsFilters } from "@/components/cards/CardsFilters";
 import { CardsGrid, type CardRow } from "@/components/cards/CardsGrid";
 import { CardsPaginationClient } from "@/components/cards/CardsPaginationClient";
-import { CardsFilters } from "@/components/cards/CardsFilters";
 import { CardsSearchSort } from "@/components/cards/CardsSearchSort";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -68,33 +68,37 @@ export function CardsGalleryClient({
   });
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[400px_1fr] lg:items-start">
-      <div className="hidden w-full max-w-[400px] lg:block">
-        <CardsFilters />
-      </div>
+    <div className="lg:flex lg:gap-6">
+      <aside className="hidden lg:block lg:w-[320px] lg:shrink-0 lg:border-r lg:border-border lg:pr-6">
+        <div className="sticky h-[calc(100dvh-4rem)] overflow-y-auto py-6">
+          <CardsFilters />
+        </div>
+      </aside>
 
-      <div className="grid gap-6">
-        <CardsSearchSort />
+      <div className="min-w-0 flex-1 py-4">
+        <div className="grid gap-6">
+          <CardsSearchSort />
 
-        {isLoading ? (
-          <CardsGridSkeleton />
-        ) : (
-          <CardsGrid
-            cards={data?.items}
-            emptyTitle={emptyTitle}
-            emptyDescription={emptyDescription}
-          />
-        )}
+          {isLoading ? (
+            <CardsGridSkeleton />
+          ) : (
+            <CardsGrid
+              cards={data?.items}
+              emptyTitle={emptyTitle}
+              emptyDescription={emptyDescription}
+            />
+          )}
 
-        {data ? (
-          <CardsPaginationClient
-            page={data.page}
-            pageSize={data.pageSize}
-            total={data.total}
-            hasPrev={data.hasPrev}
-            hasNext={data.hasNext}
-          />
-        ) : null}
+          {data ? (
+            <CardsPaginationClient
+              page={data.page}
+              pageSize={data.pageSize}
+              total={data.total}
+              hasPrev={data.hasPrev}
+              hasNext={data.hasNext}
+            />
+          ) : null}
+        </div>
       </div>
     </div>
   );

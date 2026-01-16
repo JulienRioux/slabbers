@@ -57,7 +57,7 @@ export function CardsGrid({
   }
 
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(360px,1fr))] items-start justify-items-center gap-6">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] items-start justify-items-center gap-6">
       {cards.map((card) => {
         const image = card.image_urls?.[0];
         const fallbackLabel = card.user_id ? card.user_id.slice(0, 8) : "";
