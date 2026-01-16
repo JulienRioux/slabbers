@@ -21,10 +21,11 @@ export default async function LoginPage({
     sent?: string;
     email?: string;
     error?: string;
+    error_message?: string;
     next?: string;
   }>;
 }) {
-  const { sent, email, error, next } = await searchParams;
+  const { sent, email, error, error_message, next } = await searchParams;
 
   async function sendMagicLink(formData: FormData) {
     "use server";
@@ -36,7 +37,29 @@ export default async function LoginPage({
       return;
     }
 
-    const origin = (await headers()).get("origin") ?? "";
+    const hdrs = await headers();
+    const origin =
+      hdrs.get("origin") ??
+      (() => {
+        const proto = hdrs.get("x-forwarded-proto");
+        const host = hdrs.get("x-forwarded-host") ?? hdrs.get("host");
+        if (proto && host) return `${proto}://${host}`;
+        return null;
+      })() ??
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+
+    if (!origin) {
+      const params = new URLSearchParams();
+      params.set("error", "1");
+      params.set(
+        "error_message",
+        "Missing request origin. Set NEXT_PUBLIC_SITE_URL in production."
+      );
+      params.set("email", email);
+      if (next) params.set("next", next);
+      redirect(`/login?${params.toString()}`);
+    }
     const supabase = await createClient();
 
     const { error } = await supabase.auth.signInWithOtp({
@@ -50,7 +73,10 @@ export default async function LoginPage({
 
     // We always redirect back to /login so we don't leak auth state in a RSC render.
     const params = new URLSearchParams();
-    if (error) params.set("error", "1");
+    if (error) {
+      params.set("error", "1");
+      params.set("error_message", error.message);
+    }
     else params.set("sent", "1");
     params.set("email", email);
     if (next) params.set("next", next);
@@ -90,7 +116,8 @@ export default async function LoginPage({
             ) : null}
             {error === "1" ? (
               <p className="text-sm text-destructive">
-                Couldn’t send the magic link. Check your Supabase env vars.
+                Couldn’t send the magic link.
+                {error_message ? ` ${error_message}` : null}
               </p>
             ) : null}
 

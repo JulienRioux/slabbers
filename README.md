@@ -53,6 +53,18 @@ Slabbers V1 is strictly a **collection + display app**.
 
 ## Supabase Setup
 
+## Environment Variables
+
+Set these locally (e.g. `.env.local`) and in Vercel (Project → Settings → Environment Variables):
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` (or `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
+- `SUPABASE_SECRET_KEY` (server-only; alternatively `SUPABASE_SERVICE_ROLE_KEY`)
+
+For consistent magic-link redirects in production, also set:
+
+- `NEXT_PUBLIC_SITE_URL` (e.g. `https://your-domain.com`)
+
 ### 1) Database (cards + RLS)
 
 Run the SQL in:
@@ -83,6 +95,15 @@ This creates a public bucket named `card-images` and adds basic RLS policies.
 - No passwords or usernames
 - Persistent authenticated sessions
 - Required for adding or editing cards
+
+### Production Redirect URLs (required)
+
+In Supabase Dashboard → Auth → URL Configuration:
+
+- Set **Site URL** to your deployed domain (e.g. `https://your-domain.com`).
+- Add `https://your-domain.com/auth/callback` to **Redirect URLs**.
+
+If these don’t match your deploy domain, Supabase may refuse to send the email (or the callback exchange will fail).
 
 ---
 
