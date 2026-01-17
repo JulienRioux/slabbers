@@ -80,12 +80,22 @@ async function Header() {
         <nav className="flex items-center gap-2">
           <NavbarBackButton />
 
+          {user ? (
+            <Button asChild aria-label="Add card">
+              <Link href="/add">
+                <IconPlus className="h-5 w-5" />
+                Add card
+              </Link>
+            </Button>
+          ) : null}
+
           <Button asChild variant="outline" aria-label="Browse">
             <Link href="/browse">
               <IconCompass className="h-5 w-5" />
               Browse
             </Link>
           </Button>
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
