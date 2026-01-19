@@ -28,15 +28,15 @@ function normalizeBaseUrl(raw: string) {
   return v;
 }
 
-function pickBaseUrlFromHeaders() {
-  const h = headers();
+async function pickBaseUrlFromHeaders() {
+  const h = await headers();
   const proto = h.get("x-forwarded-proto") ?? "https";
   const host = h.get("x-forwarded-host") ?? h.get("host");
   if (!host) return "";
   return `${proto}://${host}`.replace(/\/+$/, "");
 }
 
-function getBaseUrl() {
+async function getBaseUrl() {
   const envSite = normalizeBaseUrl(process.env.NEXT_PUBLIC_SITE_URL ?? "");
 
   const isProd = process.env.NODE_ENV === "production";
@@ -54,7 +54,7 @@ function getBaseUrl() {
   const vercelUrl = normalizeBaseUrl(process.env.VERCEL_URL ?? "");
   if (vercelUrl) return vercelUrl;
 
-  return pickBaseUrlFromHeaders();
+  return await pickBaseUrlFromHeaders();
 }
 
 export default async function LoginPage({
@@ -81,7 +81,7 @@ export default async function LoginPage({
       );
     }
 
-    const origin = getBaseUrl();
+    const origin = await getBaseUrl();
 
     if (!origin) {
       const params = new URLSearchParams();
@@ -135,7 +135,7 @@ export default async function LoginPage({
             sent={sent === "1"}
             error={
               error === "1"
-                ? error_message ?? "Couldn’t send the magic link."
+                ? (error_message ?? "Couldn’t send the magic link.")
                 : null
             }
           />
