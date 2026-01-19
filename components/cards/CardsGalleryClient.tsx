@@ -70,7 +70,7 @@ export function CardsGalleryClient({
   return (
     <div className="lg:flex lg:gap-6">
       <aside className="hidden lg:block lg:w-[320px] lg:shrink-0 lg:border-r lg:border-border lg:pr-6">
-        <div className="sticky h-[calc(100dvh-4rem)] overflow-y-auto py-6">
+        <div className="sticky h-[calc(100dvh-4rem)] py-6">
           <CardsFilters />
         </div>
       </aside>

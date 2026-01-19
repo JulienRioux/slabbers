@@ -30,13 +30,32 @@ export async function POST(request: Request) {
   const title = String(formData.get("title") ?? "").trim();
   const year = parseOptionalInt(formData.get("year"));
   const player = String(formData.get("player") ?? "").trim();
-  const brand = String(formData.get("brand") ?? "").trim();
+  const manufacturer = String(formData.get("manufacturer") ?? "").trim();
+
+  const team = String(formData.get("team") ?? "").trim() || null;
+  const league = String(formData.get("league") ?? "").trim() || null;
+  const isSport = parseBoolean(formData.get("is_sport"));
+  const sport = String(formData.get("sport") ?? "").trim() || null;
+
+  const condition = String(formData.get("condition") ?? "").trim() || null;
+  const conditionDetail =
+    String(formData.get("condition_detail") ?? "").trim() || null;
+  const countryOfOrigin =
+    String(formData.get("country_of_origin") ?? "").trim() || null;
+  const originalLicensedReprint =
+    String(formData.get("original_licensed_reprint") ?? "").trim() || null;
+  const parallelVariety =
+    String(formData.get("parallel_variety") ?? "").trim() || null;
+  const features = String(formData.get("features") ?? "").trim() || null;
+  const season = String(formData.get("season") ?? "").trim() || null;
+  const yearManufactured = parseOptionalInt(formData.get("year_manufactured"));
 
   const isPrivate = parseBoolean(formData.get("is_private"));
 
   const forSale = parseBoolean(formData.get("for_sale"));
   const priceCents = parseOptionalInt(formData.get("price_cents"));
   const currency = String(formData.get("currency") ?? "CAD").trim() || "CAD";
+
 
   const setName = String(formData.get("set_name") ?? "").trim() || null;
   const cardNumber = String(formData.get("card_number") ?? "").trim() || null;
@@ -51,20 +70,34 @@ export async function POST(request: Request) {
   const serialNumbered = parseBoolean(formData.get("serial_numbered"));
   const printRun = parseOptionalInt(formData.get("print_run"));
 
+  const notes = String(formData.get("notes") ?? "").trim() || null;
+
+  const frontImageRaw = formData.get("front_image");
+  const backImageRaw = formData.get("back_image");
+  const frontImage = frontImageRaw instanceof File ? frontImageRaw : null;
+  const backImage = backImageRaw instanceof File ? backImageRaw : null;
+
   const images = formData
     .getAll("images")
     .filter((f): f is File => f instanceof File);
 
-  if (!title || !player || !brand || !year) {
+  if (!title || !player || !manufacturer || !year) {
     return NextResponse.json(
-      { error: "Missing required fields: title, year, player, brand." },
+      { error: "Missing required fields: title, year, player, manufacturer." },
       { status: 400 }
     );
   }
 
-  if (images.length === 0) {
+  if (isSport && !sport) {
     return NextResponse.json(
-      { error: "At least one image is required." },
+      { error: "sport is required when is_sport is true." },
+      { status: 400 }
+    );
+  }
+
+  if (!frontImage || !backImage) {
+    return NextResponse.json(
+      { error: "front_image and back_image are required." },
       { status: 400 }
     );
   }
@@ -85,7 +118,7 @@ export async function POST(request: Request) {
     imageUrls = await uploadCardImages({
       supabase: supabaseAdmin,
       userId: user.id,
-      files: images,
+      files: [frontImage, backImage, ...images],
     });
   } catch (e: unknown) {
     const err = e as Record<string, unknown> | null;
@@ -103,6 +136,9 @@ export async function POST(request: Request) {
     );
   }
 
+  const frontImageUrl = imageUrls[0] ?? null;
+  const backImageUrl = imageUrls[1] ?? null;
+
   const { data, error } = await supabase
     .from("cards")
     .insert({
@@ -111,7 +147,19 @@ export async function POST(request: Request) {
       title,
       year,
       player,
-      brand,
+      manufacturer,
+      team: isSport ? team : null,
+      league: isSport ? league : null,
+      is_sport: isSport,
+      sport: isSport ? sport : null,
+      condition,
+      condition_detail: conditionDetail,
+      country_of_origin: countryOfOrigin,
+      original_licensed_reprint: originalLicensedReprint,
+      parallel_variety: parallelVariety,
+      features,
+      season,
+      year_manufactured: yearManufactured,
       set_name: setName,
       card_number: cardNumber,
       is_graded: isGraded,
@@ -124,6 +172,9 @@ export async function POST(request: Request) {
       for_sale: forSale,
       price_cents: forSale ? priceCents : null,
       currency,
+      notes,
+      front_image_url: frontImageUrl,
+      back_image_url: backImageUrl,
       image_urls: imageUrls,
     })
     .select("id")

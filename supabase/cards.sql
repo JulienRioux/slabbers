@@ -13,7 +13,21 @@ create table if not exists public.cards (
   title text not null,
   year integer not null,
   player text not null,
-  brand text not null,
+  manufacturer text not null,
+
+  team text null,
+  league text null,
+  is_sport boolean not null default true,
+  sport text null,
+
+  condition text null,
+  condition_detail text null,
+  country_of_origin text null,
+  original_licensed_reprint text null,
+  parallel_variety text null,
+  features text null,
+  season text null,
+  year_manufactured integer null,
 
   set_name text null,
   card_number text null,
@@ -31,16 +45,68 @@ create table if not exists public.cards (
   price_cents integer null,
   currency text not null default 'CAD',
 
+  notes text null,
+
+  -- Required images
+  front_image_url text null,
+  back_image_url text null,
+
   image_urls text[] not null,
   created_at timestamptz not null default now(),
 
   constraint cards_image_urls_non_empty check (array_length(image_urls, 1) >= 1),
+  constraint cards_sport_required_check check (
+    (is_sport = false)
+    or
+    (sport is not null and btrim(sport) <> '')
+  ),
   constraint cards_for_sale_price_check check (
     (for_sale = false and price_cents is null)
     or
     (for_sale = true and price_cents is not null and price_cents > 0)
   )
 );
+
+-- If the table already exists, ensure new columns are present.
+alter table public.cards
+  add column if not exists manufacturer text,
+  add column if not exists team text,
+  add column if not exists league text,
+  add column if not exists is_sport boolean,
+  add column if not exists sport text,
+  add column if not exists condition text,
+  add column if not exists condition_detail text,
+  add column if not exists country_of_origin text,
+  add column if not exists original_licensed_reprint text,
+  add column if not exists parallel_variety text,
+  add column if not exists features text,
+  add column if not exists season text,
+  add column if not exists year_manufactured integer,
+  add column if not exists front_image_url text,
+  add column if not exists back_image_url text,
+  add column if not exists notes text;
+
+-- Remove deprecated estimated value columns if present.
+alter table public.cards
+  drop column if exists estimated_value_cents,
+  drop column if exists estimated_currency;
+
+-- Migrate from legacy brand column -> manufacturer
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'cards'
+      and column_name = 'brand'
+  ) then
+    alter table public.cards add column if not exists manufacturer text;
+    execute 'update public.cards set manufacturer = brand where manufacturer is null';
+    alter table public.cards alter column manufacturer set not null;
+    alter table public.cards drop column if exists brand;
+  end if;
+end $$;
 
 create index if not exists cards_created_at_idx on public.cards (created_at desc);
 create index if not exists cards_user_id_idx on public.cards (user_id);

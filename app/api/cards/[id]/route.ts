@@ -142,13 +142,30 @@ export async function PATCH(
   const title = toRequiredTrimmedString(payload?.title);
   const year = toOptionalInt(payload?.year);
   const player = toRequiredTrimmedString(payload?.player);
-  const brand = toRequiredTrimmedString(payload?.brand);
+  const manufacturer = toRequiredTrimmedString(payload?.manufacturer);
+
+  const team = toOptionalTrimmedString(payload?.team);
+  const league = toOptionalTrimmedString(payload?.league);
+  const isSport = toBoolean(payload?.is_sport);
+  const sport = toOptionalTrimmedString(payload?.sport);
+
+  const condition = toOptionalTrimmedString(payload?.condition);
+  const conditionDetail = toOptionalTrimmedString(payload?.condition_detail);
+  const countryOfOrigin = toOptionalTrimmedString(payload?.country_of_origin);
+  const originalLicensedReprint = toOptionalTrimmedString(
+    payload?.original_licensed_reprint
+  );
+  const parallelVariety = toOptionalTrimmedString(payload?.parallel_variety);
+  const features = toOptionalTrimmedString(payload?.features);
+  const season = toOptionalTrimmedString(payload?.season);
+  const yearManufactured = toOptionalInt(payload?.year_manufactured);
 
   const isPrivate = toBoolean(payload?.is_private);
 
   const forSale = toBoolean(payload?.for_sale);
   const priceCents = toOptionalInt(payload?.price_cents);
   const currency = toRequiredTrimmedString(payload?.currency) || "CAD";
+
 
   const setName = toOptionalTrimmedString(payload?.set_name);
   const cardNumber = toOptionalTrimmedString(payload?.card_number);
@@ -162,9 +179,18 @@ export async function PATCH(
   const serialNumbered = toBoolean(payload?.serial_numbered);
   const printRun = toOptionalInt(payload?.print_run);
 
-  if (!title || !player || !brand || !year) {
+  const notes = toOptionalTrimmedString(payload?.notes);
+
+  if (!title || !player || !manufacturer || !year) {
     return NextResponse.json(
-      { error: "Missing required fields: title, year, player, brand." },
+      { error: "Missing required fields: title, year, player, manufacturer." },
+      { status: 400 }
+    );
+  }
+
+  if (isSport && !sport) {
+    return NextResponse.json(
+      { error: "sport is required when is_sport is true." },
       { status: 400 }
     );
   }
@@ -184,7 +210,19 @@ export async function PATCH(
       title,
       year,
       player,
-      brand,
+      manufacturer,
+      team: isSport ? team : null,
+      league: isSport ? league : null,
+      is_sport: isSport,
+      sport: isSport ? sport : null,
+      condition,
+      condition_detail: conditionDetail,
+      country_of_origin: countryOfOrigin,
+      original_licensed_reprint: originalLicensedReprint,
+      parallel_variety: parallelVariety,
+      features,
+      season,
+      year_manufactured: yearManufactured,
       is_private: isPrivate,
       set_name: setName,
       card_number: cardNumber,
@@ -198,6 +236,7 @@ export async function PATCH(
       for_sale: forSale,
       price_cents: forSale ? priceCents : null,
       currency,
+      notes,
     })
     .eq("id", id)
     .eq("user_id", user.id)

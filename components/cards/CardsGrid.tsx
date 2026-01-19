@@ -17,7 +17,7 @@ export type CardRow = {
   title: string;
   year: number;
   player: string;
-  brand: string;
+  manufacturer: string;
   set_name?: string | null;
   card_number?: string | null;
   image_urls: string[];

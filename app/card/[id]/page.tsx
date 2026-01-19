@@ -22,7 +22,7 @@ export default async function CardDetailPage({
   const { data: card, error } = await supabase
     .from("cards")
     .select(
-      "id,user_id,is_private,title,year,player,brand,set_name,card_number,is_graded,grading_company,grade,rookie,autograph,serial_numbered,print_run,for_sale,price_cents,currency,image_urls,created_at"
+      "id,user_id,is_private,title,year,player,manufacturer,team,league,is_sport,sport,condition,condition_detail,country_of_origin,original_licensed_reprint,parallel_variety,features,season,year_manufactured,set_name,card_number,is_graded,grading_company,grade,rookie,autograph,serial_numbered,print_run,for_sale,price_cents,currency,notes,image_urls,created_at"
     )
     .eq("id", id)
     .maybeSingle();
@@ -61,7 +61,7 @@ export default async function CardDetailPage({
               <div className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
                 {[
                   card.year ? String(card.year) : null,
-                  card.brand ? String(card.brand) : null,
+                  card.manufacturer ? String(card.manufacturer) : null,
                   card.set_name ? String(card.set_name) : null,
                 ]
                   .filter(Boolean)
@@ -162,10 +162,49 @@ export default async function CardDetailPage({
 
               <div className="grid grid-cols-[7rem_1fr] items-center gap-4 px-4 py-3">
                 <dt className="text-xs uppercase tracking-widest text-muted-foreground">
-                  Brand
+                  Manufacturer
                 </dt>
-                <dd className="text-right font-medium">{card.brand}</dd>
+                <dd className="text-right font-medium">{card.manufacturer}</dd>
               </div>
+
+              <div className="border-t border-border" />
+
+              <div className="grid grid-cols-[7rem_1fr] items-center gap-4 px-4 py-3">
+                <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+                  Sport
+                </dt>
+                <dd className="text-right font-medium">
+                  {card.is_sport
+                    ? card.sport || "Sport"
+                    : "Non-sport"}
+                </dd>
+              </div>
+
+              {card.is_sport && (card.league || card.team) ? (
+                <>
+                  <div className="border-t border-border" />
+
+                  <div className="grid grid-cols-[7rem_1fr] items-center gap-4 px-4 py-3">
+                    <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+                      League
+                    </dt>
+                    <dd className="text-right font-medium">
+                      {card.league ?? "—"}
+                    </dd>
+                  </div>
+
+                  <div className="border-t border-border" />
+
+                  <div className="grid grid-cols-[7rem_1fr] items-center gap-4 px-4 py-3">
+                    <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Team
+                    </dt>
+                    <dd className="text-right font-medium">
+                      {card.team ?? "—"}
+                    </dd>
+                  </div>
+                </>
+              ) : null}
 
               {card.set_name ? (
                 <>
@@ -178,6 +217,116 @@ export default async function CardDetailPage({
                   </div>
                 </>
               ) : null}
+
+
+              {card.condition ? (
+                <>
+                  <div className="border-t border-border" />
+                  <div className="grid grid-cols-[7rem_1fr] items-center gap-4 px-4 py-3">
+                    <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Condition
+                    </dt>
+                    <dd className="text-right font-medium">{card.condition}</dd>
+                  </div>
+                </>
+              ) : null}
+
+              {card.condition_detail ? (
+                <>
+                  <div className="border-t border-border" />
+                  <div className="grid grid-cols-[7rem_1fr] items-center gap-4 px-4 py-3">
+                    <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Condition detail
+                    </dt>
+                    <dd className="text-right font-medium">
+                      {card.condition_detail}
+                    </dd>
+                  </div>
+                </>
+              ) : null}
+
+              {card.country_of_origin ? (
+                <>
+                  <div className="border-t border-border" />
+                  <div className="grid grid-cols-[7rem_1fr] items-center gap-4 px-4 py-3">
+                    <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Origin
+                    </dt>
+                    <dd className="text-right font-medium">
+                      {card.country_of_origin}
+                    </dd>
+                  </div>
+                </>
+              ) : null}
+
+              {card.original_licensed_reprint ? (
+                <>
+                  <div className="border-t border-border" />
+                  <div className="grid grid-cols-[7rem_1fr] items-center gap-4 px-4 py-3">
+                    <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Original/Reprint
+                    </dt>
+                    <dd className="text-right font-medium">
+                      {card.original_licensed_reprint}
+                    </dd>
+                  </div>
+                </>
+              ) : null}
+
+
+
+              {card.parallel_variety ? (
+                <>
+                  <div className="border-t border-border" />
+                  <div className="grid grid-cols-[7rem_1fr] items-center gap-4 px-4 py-3">
+                    <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Parallel/Variety
+                    </dt>
+                    <dd className="text-right font-medium">
+                      {card.parallel_variety}
+                    </dd>
+                  </div>
+                </>
+              ) : null}
+
+              {card.features ? (
+                <>
+                  <div className="border-t border-border" />
+                  <div className="grid grid-cols-[7rem_1fr] items-center gap-4 px-4 py-3">
+                    <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Features
+                    </dt>
+                    <dd className="text-right font-medium">{card.features}</dd>
+                  </div>
+                </>
+              ) : null}
+
+              {card.season ? (
+                <>
+                  <div className="border-t border-border" />
+                  <div className="grid grid-cols-[7rem_1fr] items-center gap-4 px-4 py-3">
+                    <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Season
+                    </dt>
+                    <dd className="text-right font-medium">{card.season}</dd>
+                  </div>
+                </>
+              ) : null}
+
+              {card.year_manufactured ? (
+                <>
+                  <div className="border-t border-border" />
+                  <div className="grid grid-cols-[7rem_1fr] items-center gap-4 px-4 py-3">
+                    <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Year manufactured
+                    </dt>
+                    <dd className="text-right font-medium">
+                      {card.year_manufactured}
+                    </dd>
+                  </div>
+                </>
+              ) : null}
+
 
               {card.card_number ? (
                 <>
@@ -202,6 +351,20 @@ export default async function CardDetailPage({
                     </dt>
                     <dd className="text-right font-medium">
                       {card.print_run ? `/${card.print_run}` : "Yes"}
+                    </dd>
+                  </div>
+                </>
+              ) : null}
+
+              {card.notes ? (
+                <>
+                  <div className="border-t border-border" />
+                  <div className="grid gap-2 px-4 py-3">
+                    <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Notes
+                    </dt>
+                    <dd className="whitespace-pre-wrap text-sm text-foreground">
+                      {card.notes}
                     </dd>
                   </div>
                 </>

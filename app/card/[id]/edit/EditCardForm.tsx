@@ -26,7 +26,19 @@ type InitialValues = {
   title: string;
   year: number;
   player: string;
-  brand: string;
+  manufacturer: string;
+  team: string | null;
+  league: string | null;
+  is_sport: boolean;
+  sport: string | null;
+  condition: string | null;
+  condition_detail: string | null;
+  country_of_origin: string | null;
+  original_licensed_reprint: string | null;
+  parallel_variety: string | null;
+  features: string | null;
+  season: string | null;
+  year_manufactured: number | null;
   is_private: boolean;
   for_sale: boolean;
   price_cents: number | null;
@@ -40,6 +52,7 @@ type InitialValues = {
   autograph: boolean;
   serial_numbered: boolean;
   print_run: number | null;
+  notes: string | null;
 };
 
 const GRADING_COMPANIES = [
@@ -59,6 +72,29 @@ const GRADE_OPTIONS = Array.from({ length: 19 }, (_, idx) => {
   return Number.isInteger(value) ? String(value) : String(value);
 });
 
+const CURRENCIES = ["CAD", "USD", "EUR", "GBP", "AUD", "JPY"] as const;
+
+const SPORTS = [
+  "Baseball",
+  "Basketball",
+  "Football",
+  "Hockey",
+  "Soccer",
+  "Golf",
+  "Tennis",
+  "MMA",
+  "Boxing",
+  "Racing",
+  "Other",
+] as const;
+
+const ORIGINAL_LICENSED_REPRINT_OPTIONS = [
+  "Original",
+  "Licensed Reprint",
+  "Reprint",
+  "Unknown",
+] as const;
+
 export function EditCardForm({
   cardId,
   initialValues,
@@ -71,7 +107,53 @@ export function EditCardForm({
   const [title, setTitle] = React.useState(initialValues.title ?? "");
   const [year, setYear] = React.useState(String(initialValues.year ?? ""));
   const [player, setPlayer] = React.useState(initialValues.player ?? "");
-  const [brand, setBrand] = React.useState(initialValues.brand ?? "");
+  const [manufacturer, setManufacturer] = React.useState(
+    initialValues.manufacturer ?? ""
+  );
+
+  const [isSport, setIsSport] = React.useState(
+    Boolean(initialValues.is_sport)
+  );
+  const [sportChoice, setSportChoice] = React.useState<string>(() => {
+    const initial = String(initialValues.sport ?? "").trim();
+    if (!initial) return "";
+    return (SPORTS as readonly string[]).includes(initial) ? initial : "Other";
+  });
+  const [sportCustom, setSportCustom] = React.useState(() => {
+    const initial = String(initialValues.sport ?? "").trim();
+    return (SPORTS as readonly string[]).includes(initial) ? "" : initial;
+  });
+  const [team, setTeam] = React.useState(initialValues.team ?? "");
+  const [league, setLeague] = React.useState(initialValues.league ?? "");
+
+  const [condition, setCondition] = React.useState(initialValues.condition ?? "");
+  const [conditionDetail, setConditionDetail] = React.useState(
+    initialValues.condition_detail ?? ""
+  );
+  const [countryOfOrigin, setCountryOfOrigin] = React.useState(
+    initialValues.country_of_origin ?? ""
+  );
+  const [originalLicensedReprint, setOriginalLicensedReprint] = React.useState<
+    (typeof ORIGINAL_LICENSED_REPRINT_OPTIONS)[number] | ""
+  >(
+    (ORIGINAL_LICENSED_REPRINT_OPTIONS as readonly string[]).includes(
+      String(initialValues.original_licensed_reprint ?? "")
+    )
+      ? (initialValues.original_licensed_reprint as (typeof ORIGINAL_LICENSED_REPRINT_OPTIONS)[number])
+      : ""
+  );
+  const [parallelVariety, setParallelVariety] = React.useState(
+    initialValues.parallel_variety ?? ""
+  );
+  const [features, setFeatures] = React.useState(
+    initialValues.features ?? ""
+  );
+  const [season, setSeason] = React.useState(initialValues.season ?? "");
+  const [yearManufactured, setYearManufactured] = React.useState(
+    initialValues.year_manufactured != null
+      ? String(initialValues.year_manufactured)
+      : ""
+  );
 
   const [isPrivate, setIsPrivate] = React.useState(
     Boolean(initialValues.is_private)
@@ -83,6 +165,16 @@ export function EditCardForm({
       ? String((initialValues.price_cents / 100).toFixed(2))
       : ""
   );
+  const [priceCurrency, setPriceCurrency] = React.useState<
+    (typeof CURRENCIES)[number]
+  >(
+    (CURRENCIES as readonly string[]).includes(
+      String(initialValues.currency).toUpperCase()
+    )
+      ? (String(initialValues.currency).toUpperCase() as (typeof CURRENCIES)[number])
+      : CURRENCIES[0]
+  );
+
 
   const [setName, setSetName] = React.useState(initialValues.set_name ?? "");
   const [cardNumber, setCardNumber] = React.useState(
@@ -108,6 +200,8 @@ export function EditCardForm({
     initialValues.print_run != null ? String(initialValues.print_run) : ""
   );
 
+  const [notes, setNotes] = React.useState(initialValues.notes ?? "");
+
   const [error, setError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -117,16 +211,16 @@ export function EditCardForm({
 
     const cleanedTitle = title.trim();
     const cleanedPlayer = player.trim();
-    const cleanedBrand = brand.trim();
+    const cleanedManufacturer = manufacturer.trim();
     const parsedYear = Number(year);
 
     if (
       !cleanedTitle ||
       !cleanedPlayer ||
-      !cleanedBrand ||
+      !cleanedManufacturer ||
       !Number.isFinite(parsedYear)
     ) {
-      setError("Please fill in title, year, player, and brand.");
+      setError("Please fill in title, year, player, and manufacturer.");
       return;
     }
 
@@ -140,6 +234,14 @@ export function EditCardForm({
       priceCents = Math.round(parsedPrice * 100);
     }
 
+
+    const effectiveSport =
+      sportChoice === "Other" ? sportCustom.trim() : sportChoice.trim();
+    if (isSport && !effectiveSport) {
+      setError("Sport is required when this is a sports card.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const res = await fetch(`/api/cards/${cardId}`, {
@@ -149,11 +251,31 @@ export function EditCardForm({
           title: cleanedTitle,
           year: parsedYear,
           player: cleanedPlayer,
-          brand: cleanedBrand,
+          manufacturer: cleanedManufacturer,
+          team: team.trim() ? team.trim() : null,
+          league: league.trim() ? league.trim() : null,
+          is_sport: isSport,
+          sport: isSport && effectiveSport ? effectiveSport : null,
+          condition: condition.trim() ? condition.trim() : null,
+          condition_detail: conditionDetail.trim()
+            ? conditionDetail.trim()
+            : null,
+          country_of_origin: countryOfOrigin.trim()
+            ? countryOfOrigin.trim()
+            : null,
+          original_licensed_reprint: originalLicensedReprint || null,
+          parallel_variety: parallelVariety.trim()
+            ? parallelVariety.trim()
+            : null,
+          features: features.trim() ? features.trim() : null,
+          season: season.trim() ? season.trim() : null,
+          year_manufactured: yearManufactured.trim()
+            ? Number(yearManufactured)
+            : null,
           is_private: isPrivate,
           for_sale: forSale,
           price_cents: forSale ? priceCents : null,
-          currency: initialValues.currency ?? "CAD",
+          currency: priceCurrency,
           set_name: setName.trim() ? setName.trim() : null,
           card_number: cardNumber.trim() ? cardNumber.trim() : null,
           is_graded: isGraded,
@@ -165,6 +287,7 @@ export function EditCardForm({
           serial_numbered: serialNumbered,
           print_run:
             serialNumbered && printRun.trim() ? Number(printRun) : null,
+          notes: notes.trim() ? notes.trim() : null,
         }),
       });
 
@@ -224,11 +347,11 @@ export function EditCardForm({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="brand">Brand</Label>
+            <Label htmlFor="manufacturer">Manufacturer</Label>
             <Input
-              id="brand"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
+              id="manufacturer"
+              value={manufacturer}
+              onChange={(e) => setManufacturer(e.target.value)}
               required
             />
           </div>
@@ -260,22 +383,214 @@ export function EditCardForm({
               </Label>
             </div>
             {forSale ? (
-              <div className="grid gap-2">
-                <Label htmlFor="price">Price (CAD)</Label>
-                <Input
-                  id="price"
-                  inputMode="decimal"
-                  value={priceCad}
-                  onChange={(e) => setPriceCad(e.target.value)}
-                  placeholder="e.g. 250"
-                  required
-                />
+              <div className="grid gap-3 sm:grid-cols-[1fr_160px]">
+                <div className="grid gap-2">
+                  <Label htmlFor="price">Price</Label>
+                  <Input
+                    id="price"
+                    inputMode="decimal"
+                    value={priceCad}
+                    onChange={(e) => setPriceCad(e.target.value)}
+                    placeholder="e.g. 250"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="priceCurrency">Currency</Label>
+                  <Select
+                    value={priceCurrency}
+                    onValueChange={(next) =>
+                      setPriceCurrency(next as (typeof CURRENCIES)[number])
+                    }
+                  >
+                    <SelectTrigger id="priceCurrency">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             ) : null}
           </div>
 
           <div className="grid gap-4 rounded-md border border-border p-4">
             <p className="text-sm font-medium">Optional</p>
+
+            <div className="grid gap-3">
+              <Label>Sport details</Label>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="isSport"
+                  checked={isSport}
+                  onCheckedChange={(v) => setIsSport(Boolean(v))}
+                />
+                <Label htmlFor="isSport" className="font-normal">
+                  This is a sports card
+                </Label>
+              </div>
+
+              {isSport ? (
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid gap-2">
+                    <Label htmlFor="sport">Sport</Label>
+                    <Select
+                      value={sportChoice || undefined}
+                      onValueChange={(next) => setSportChoice(next)}
+                    >
+                      <SelectTrigger id="sport">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SPORTS.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {sportChoice === "Other" ? (
+                    <div className="grid gap-2">
+                      <Label htmlFor="sportCustom">Custom sport</Label>
+                      <Input
+                        id="sportCustom"
+                        value={sportCustom}
+                        onChange={(e) => setSportCustom(e.target.value)}
+                        placeholder="e.g. Lacrosse"
+                      />
+                    </div>
+                  ) : null}
+                  <div className="grid gap-2">
+                    <Label htmlFor="league">League</Label>
+                    <Input
+                      id="league"
+                      value={league}
+                      onChange={(e) => setLeague(e.target.value)}
+                      placeholder="e.g. NHL"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="team">Team</Label>
+                    <Input
+                      id="team"
+                      value={team}
+                      onChange={(e) => setTeam(e.target.value)}
+                      placeholder="e.g. Canadiens"
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="countryOfOrigin">Country of origin</Label>
+                <Input
+                  id="countryOfOrigin"
+                  value={countryOfOrigin}
+                  onChange={(e) => setCountryOfOrigin(e.target.value)}
+                  placeholder="e.g. United States"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="condition">Condition</Label>
+                <Input
+                  id="condition"
+                  value={condition}
+                  onChange={(e) => setCondition(e.target.value)}
+                  placeholder="e.g. Near Mint or Better"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="conditionDetail">Condition details</Label>
+                <Input
+                  id="conditionDetail"
+                  value={conditionDetail}
+                  onChange={(e) => setConditionDetail(e.target.value)}
+                  placeholder="e.g. Not in original packaging"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="originalLicensedReprint">
+                  Original/Licensed Reprint
+                </Label>
+                <Select
+                  value={originalLicensedReprint || undefined}
+                  onValueChange={(next) =>
+                    setOriginalLicensedReprint(
+                      next as (typeof ORIGINAL_LICENSED_REPRINT_OPTIONS)[number]
+                    )
+                  }
+                >
+                  <SelectTrigger id="originalLicensedReprint">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ORIGINAL_LICENSED_REPRINT_OPTIONS.map((opt) => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="parallelVariety">Parallel/Variety</Label>
+                <Input
+                  id="parallelVariety"
+                  value={parallelVariety}
+                  onChange={(e) => setParallelVariety(e.target.value)}
+                  placeholder="e.g. Red"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="season">Season</Label>
+                <Input
+                  id="season"
+                  value={season}
+                  onChange={(e) => setSeason(e.target.value)}
+                  placeholder="e.g. 1998-99"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="yearManufactured">Year manufactured</Label>
+                <Input
+                  id="yearManufactured"
+                  inputMode="numeric"
+                  value={yearManufactured}
+                  onChange={(e) => setYearManufactured(e.target.value)}
+                  placeholder="e.g. 1998"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="features">Features</Label>
+              <Input
+                id="features"
+                value={features}
+                onChange={(e) => setFeatures(e.target.value)}
+                placeholder="e.g. Insert, Parallel, Short Print"
+              />
+            </div>
 
             <div className="grid gap-2">
               <Label htmlFor="setName">Set name</Label>
@@ -294,6 +609,7 @@ export function EditCardForm({
                 onChange={(e) => setCardNumber(e.target.value)}
               />
             </div>
+
 
             <div className="grid gap-3">
               <Label>Grading</Label>
@@ -399,6 +715,17 @@ export function EditCardForm({
                   />
                 </div>
               ) : null}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Notes</Label>
+              <textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add any notes or provenance details"
+                className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
             </div>
           </div>
 

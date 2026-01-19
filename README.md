@@ -118,13 +118,17 @@ Authenticated users can add cards to their collection.
 - `title`
 - `year`
 - `player`
-- `brand`
+- `manufacturer`
 - `image`
 
 #### Optional Fields
 
 - `set_name`
 - `card_number`
+- `team`
+- `league`
+- `is_sport`
+- `sport`
 - `is_graded`
 - `grading_company`
 - `grade`
@@ -134,6 +138,7 @@ Authenticated users can add cards to their collection.
 - `print_run`
 - `for_sale`
 - `price` (required only if `for_sale = true`)
+- `notes`
 - `is_private`
 
 Each card belongs to a single user.
@@ -146,7 +151,7 @@ Each card belongs to a single user.
 - Grid-based layout displaying:
   - Card image
   - Title
-  - Key attributes (year, brand)
+  - Key attributes (year, manufacturer)
   - Badges (PSA grade, Rookie, Auto, /99)
   - **Price only if the card is marked for sale**
 - Cards link to a detail page
@@ -204,7 +209,11 @@ Each card page displays:
 | title           | Text                |
 | year            | Integer             |
 | player          | Text                |
-| brand           | Text                |
+| manufacturer    | Text                |
+| team            | Text (nullable)     |
+| league          | Text (nullable)     |
+| is_sport        | Boolean             |
+| sport           | Text (nullable)     |
 | set_name        | Text (nullable)     |
 | card_number     | Text (nullable)     |
 | is_graded       | Boolean             |
@@ -217,6 +226,7 @@ Each card page displays:
 | for_sale        | Boolean             |
 | price_cents     | Integer (nullable)  |
 | currency        | Text (default: CAD) |
+| notes           | Text (nullable)     |
 | image_urls      | Text[]              |
 | created_at      | Timestamp           |
 

@@ -75,7 +75,7 @@ export async function getCardsPage(args: {
   const to = from + pageSize - 1;
 
   const baseSelect =
-    "id,user_id,is_private,title,year,player,brand,set_name,card_number,image_urls,is_graded,grading_company,grade,rookie,autograph,serial_numbered,print_run,for_sale,price_cents,currency,created_at";
+    "id,user_id,is_private,title,year,player,manufacturer,set_name,card_number,image_urls,is_graded,grading_company,grade,rookie,autograph,serial_numbered,print_run,for_sale,price_cents,currency,created_at";
 
   const run = async (gradeRangeMode: "none" | "number" | "text") => {
     let query = supabase.from("cards").select(baseSelect, { count: "exact" });
@@ -146,7 +146,7 @@ export async function getCardsPage(args: {
         [
           `title.ilike.${pattern}`,
           `player.ilike.${pattern}`,
-          `brand.ilike.${pattern}`,
+          `manufacturer.ilike.${pattern}`,
           `set_name.ilike.${pattern}`,
           `card_number.ilike.${pattern}`,
         ].join(",")

@@ -22,7 +22,7 @@ export default async function EditCardPage({
   const { data: card, error } = await supabase
     .from("cards")
     .select(
-      "id,user_id,is_private,title,year,player,brand,set_name,card_number,is_graded,grading_company,grade,rookie,autograph,serial_numbered,print_run,for_sale,price_cents,currency"
+      "id,user_id,is_private,title,year,player,manufacturer,team,league,is_sport,sport,condition,condition_detail,country_of_origin,original_licensed_reprint,parallel_variety,features,season,year_manufactured,set_name,card_number,is_graded,grading_company,grade,rookie,autograph,serial_numbered,print_run,for_sale,price_cents,currency,notes"
     )
     .eq("id", id)
     .maybeSingle();
@@ -43,7 +43,19 @@ export default async function EditCardPage({
           title: card.title,
           year: card.year,
           player: card.player,
-          brand: card.brand,
+          manufacturer: card.manufacturer,
+          team: card.team,
+          league: card.league,
+          is_sport: Boolean(card.is_sport),
+          sport: card.sport,
+          condition: card.condition,
+          condition_detail: card.condition_detail,
+          country_of_origin: card.country_of_origin,
+          original_licensed_reprint: card.original_licensed_reprint,
+          parallel_variety: card.parallel_variety,
+          features: card.features,
+          season: card.season,
+          year_manufactured: card.year_manufactured,
           is_private: Boolean(card.is_private),
           for_sale: Boolean(card.for_sale),
           price_cents: card.price_cents,
@@ -57,6 +69,7 @@ export default async function EditCardPage({
           autograph: Boolean(card.autograph),
           serial_numbered: Boolean(card.serial_numbered),
           print_run: card.print_run,
+          notes: card.notes,
         }}
       />
     </div>
