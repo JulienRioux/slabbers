@@ -539,7 +539,8 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
       }
 
       if (typeof json.description === "string" && json.description.trim()) {
-        setDescription((prev) => (prev.trim() ? prev : json.description));
+        const nextDescription = json.description.trim();
+        setDescription((prev) => (prev.trim() ? prev : nextDescription));
       }
 
       return true;
