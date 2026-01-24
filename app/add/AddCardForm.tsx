@@ -181,8 +181,11 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
   const [step, setStep] = React.useState<1 | 2>(1);
 
   const frontInputRef = React.useRef<HTMLInputElement | null>(null);
+  const frontCameraInputRef = React.useRef<HTMLInputElement | null>(null);
   const backInputRef = React.useRef<HTMLInputElement | null>(null);
+  const backCameraInputRef = React.useRef<HTMLInputElement | null>(null);
   const optionalInputRef = React.useRef<HTMLInputElement | null>(null);
+  const optionalCameraInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const [frontImage, setFrontImage] = React.useState<SelectedImage | null>(
     null,
@@ -714,23 +717,53 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
             <div className="grid gap-4">
               <div className="grid gap-3">
                 <Label>Front image</Label>
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-muted-foreground">
                     Upload the front of the card.
                   </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => frontInputRef.current?.click()}
-                  >
-                    Add front
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="sm:hidden"
+                      onClick={() => frontCameraInputRef.current?.click()}
+                    >
+                      Take photo
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="sm:hidden"
+                      onClick={() => frontInputRef.current?.click()}
+                    >
+                      From gallery
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="hidden sm:inline-flex"
+                      onClick={() => frontInputRef.current?.click()}
+                    >
+                      Add front
+                    </Button>
+                  </div>
                 </div>
                 <input
                   ref={frontInputRef}
                   className="hidden"
                   type="file"
                   accept="image/*"
+                  onChange={(e) => {
+                    void onPickFront(e.target.files);
+                    e.currentTarget.value = "";
+                  }}
+                />
+                <input
+                  ref={frontCameraInputRef}
+                  className="hidden"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
                   onChange={(e) => {
                     void onPickFront(e.target.files);
                     e.currentTarget.value = "";
@@ -758,23 +791,53 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
 
               <div className="grid gap-3">
                 <Label>Back image</Label>
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-muted-foreground">
                     Upload the back of the card.
                   </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => backInputRef.current?.click()}
-                  >
-                    Add back
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="sm:hidden"
+                      onClick={() => backCameraInputRef.current?.click()}
+                    >
+                      Take photo
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="sm:hidden"
+                      onClick={() => backInputRef.current?.click()}
+                    >
+                      From gallery
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="hidden sm:inline-flex"
+                      onClick={() => backInputRef.current?.click()}
+                    >
+                      Add back
+                    </Button>
+                  </div>
                 </div>
                 <input
                   ref={backInputRef}
                   className="hidden"
                   type="file"
                   accept="image/*"
+                  onChange={(e) => {
+                    void onPickBack(e.target.files);
+                    e.currentTarget.value = "";
+                  }}
+                />
+                <input
+                  ref={backCameraInputRef}
+                  className="hidden"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
                   onChange={(e) => {
                     void onPickBack(e.target.files);
                     e.currentTarget.value = "";
@@ -860,15 +923,34 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
               ) : null}
 
               <div className="grid gap-3">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <Label>Optional images</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => optionalInputRef.current?.click()}
-                  >
-                    Add images
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="sm:hidden"
+                      onClick={() => optionalCameraInputRef.current?.click()}
+                    >
+                      Take photo
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="sm:hidden"
+                      onClick={() => optionalInputRef.current?.click()}
+                    >
+                      From gallery
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="hidden sm:inline-flex"
+                      onClick={() => optionalInputRef.current?.click()}
+                    >
+                      Add images
+                    </Button>
+                  </div>
                 </div>
 
                 <input
@@ -877,6 +959,17 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
                   type="file"
                   accept="image/*"
                   multiple
+                  onChange={(e) => {
+                    addOptionalFiles(e.target.files);
+                    e.currentTarget.value = "";
+                  }}
+                />
+                <input
+                  ref={optionalCameraInputRef}
+                  className="hidden"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
                   onChange={(e) => {
                     addOptionalFiles(e.target.files);
                     e.currentTarget.value = "";
