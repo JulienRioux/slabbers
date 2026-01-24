@@ -730,7 +730,6 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
                   className="hidden"
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   onChange={(e) => {
                     void onPickFront(e.target.files);
                     e.currentTarget.value = "";
@@ -775,7 +774,6 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
                   className="hidden"
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   onChange={(e) => {
                     void onPickBack(e.target.files);
                     e.currentTarget.value = "";
@@ -877,7 +875,6 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
                   className="hidden"
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   multiple
                   onChange={(e) => {
                     addOptionalFiles(e.target.files);
