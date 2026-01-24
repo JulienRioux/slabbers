@@ -45,6 +45,7 @@ create table if not exists public.cards (
   price_cents integer null,
   currency text not null default 'CAD',
 
+  description text null,
   notes text null,
 
   -- Required images
@@ -84,6 +85,7 @@ alter table public.cards
   add column if not exists year_manufactured integer,
   add column if not exists front_image_url text,
   add column if not exists back_image_url text,
+  add column if not exists description text,
   add column if not exists notes text;
 
 -- Remove deprecated estimated value columns if present.

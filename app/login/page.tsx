@@ -30,9 +30,14 @@ function normalizeBaseUrl(raw: string) {
 
 async function pickBaseUrlFromHeaders() {
   const h = await headers();
-  const proto = h.get("x-forwarded-proto") ?? "https";
+  const origin = h.get("origin");
+  if (origin && /^https?:\/\//i.test(origin)) {
+    return origin.replace(/\/+$/, "");
+  }
   const host = h.get("x-forwarded-host") ?? h.get("host");
   if (!host) return "";
+  const isLocalHost = host.includes("localhost") || host.includes("127.0.0.1");
+  const proto = h.get("x-forwarded-proto") ?? (isLocalHost ? "http" : "https");
   return `${proto}://${host}`.replace(/\/+$/, "");
 }
 
@@ -43,7 +48,7 @@ async function getBaseUrl() {
   if (envSite) {
     const isLocal =
       envSite.includes("localhost") || envSite.includes("127.0.0.1");
-    if (!(isProd && isLocal)) return envSite;
+    if ((isProd && !isLocal) || (!isProd && isLocal)) return envSite;
   }
 
   const vercelProd = normalizeBaseUrl(

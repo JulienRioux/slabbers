@@ -28,6 +28,7 @@ type IdentifyResult = {
   features: string | null;
   season: string | null;
   year_manufactured: number | null;
+  description: string | null;
   autograph: boolean | null;
   is_graded: boolean | null;
   grading_company: string | null;
@@ -49,6 +50,168 @@ type IdentifyResult = {
 
 function clampInt(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, Math.trunc(n)));
+}
+
+async function generateListingTitle(args: {
+  openai: OpenAI;
+  imageParts: Array<{ type: "image_url"; image_url: { url: string } }>;
+  extracted: {
+    year: number | null;
+    player: string | null;
+    manufacturer: string | null;
+    set_name: string | null;
+    card_number: string | null;
+    parallel_variety: string | null;
+    features: string | null;
+    autograph: boolean | null;
+    is_graded: boolean | null;
+    grading_company: string | null;
+    grade: string | null;
+    evidence_text: string | null;
+  };
+}) {
+  const {
+    openai,
+    imageParts,
+    extracted: {
+      year,
+      player,
+      manufacturer,
+      set_name,
+      card_number,
+      parallel_variety,
+      features,
+      autograph,
+      is_graded,
+      grading_company,
+      grade,
+      evidence_text,
+    },
+  } = args;
+
+  const prompt =
+    "Create an SEO/eBay-optimized but factual title for a trading card listing. " +
+    "Use only the provided info or what is visible in the images; do not invent details. " +
+    "Prefer format: Year Manufacturer Set Player #CardNumber + key attributes (RC, Auto, Parallel, Grade). " +
+    "Keep it concise (<= 80 chars when possible). " +
+    "Return JSON only: {\"title\": string|null}.";
+
+  const context = {
+    year,
+    player,
+    manufacturer,
+    set_name,
+    card_number,
+    parallel_variety,
+    features,
+    autograph,
+    is_graded,
+    grading_company,
+    grade,
+    evidence_text,
+  };
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    temperature: 0.2,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: `${prompt}\n\nContext: ${JSON.stringify(context)}` },
+          ...imageParts,
+        ],
+      },
+    ],
+  });
+
+  const content = completion.choices?.[0]?.message?.content ?? "{}";
+  const parsed = JSON.parse(content) as { title?: unknown };
+  if (typeof parsed.title === "string") {
+    const trimmed = parsed.title.trim();
+    return trimmed ? trimmed : null;
+  }
+  return null;
+}
+
+async function generateListingDescription(args: {
+  openai: OpenAI;
+  imageParts: Array<{ type: "image_url"; image_url: { url: string } }>;
+  extracted: {
+    year: number | null;
+    player: string | null;
+    manufacturer: string | null;
+    set_name: string | null;
+    card_number: string | null;
+    grading_company: string | null;
+    grade: string | null;
+    condition: string | null;
+    condition_detail: string | null;
+    features: string | null;
+    evidence_text: string | null;
+  };
+}) {
+  const {
+    openai,
+    imageParts,
+    extracted: {
+      year,
+      player,
+      manufacturer,
+      set_name,
+      card_number,
+      grading_company,
+      grade,
+      condition,
+      condition_detail,
+      features,
+      evidence_text,
+    },
+  } = args;
+
+  const prompt =
+    "Write a concise SEO/eBay-optimized listing description for a trading card based on the images and extracted details. " +
+    "Use natural phrases buyers search for, but avoid keyword stuffing. " +
+    "Avoid guessing specifics you cannot see. Mention visible condition notes, grading info, numbering, and key highlights. " +
+    "Return JSON only: {\"description\": string|null}.";
+
+  const context = {
+    year,
+    player,
+    manufacturer,
+    set_name,
+    card_number,
+    grading_company,
+    grade,
+    condition,
+    condition_detail,
+    features,
+    evidence_text,
+  };
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    temperature: 0.2,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: `${prompt}\n\nContext: ${JSON.stringify(context)}` },
+          ...imageParts,
+        ],
+      },
+    ],
+  });
+
+  const content = completion.choices?.[0]?.message?.content ?? "{}";
+  const parsed = JSON.parse(content) as { description?: unknown };
+  if (typeof parsed.description === "string") {
+    const trimmed = parsed.description.trim();
+    return trimmed ? trimmed : null;
+  }
+  return null;
 }
 
 function extractYearFromText(text: string): number | null {
@@ -99,7 +262,6 @@ function coerceConfidence(input: unknown): number {
 const identifyOutputSchema = z
   .object({
     confidence: z.any().optional(),
-    title: z.string().nullable().optional(),
     year: z.any().optional(),
     player: z.string().nullable().optional(),
     manufacturer: z.string().nullable().optional(),
@@ -114,8 +276,9 @@ const identifyOutputSchema = z
     original_licensed_reprint: z.string().nullable().optional(),
     parallel_variety: z.string().nullable().optional(),
     features: z.string().nullable().optional(),
-    season: z.string().nullable().optional(),
+    season: z.union([z.string(), z.number()]).nullable().optional(),
     year_manufactured: z.any().optional(),
+    description: z.string().nullable().optional(),
     autograph: z.boolean().nullable().optional(),
     is_graded: z.boolean().nullable().optional(),
     grading_company: z.string().nullable().optional(),
@@ -288,7 +451,7 @@ function pickBestImageUrl(item: RawEbayItemSummary, minSize = 500) {
 
   const upgraded = candidates.map((url) => upgradeEbayImageUrl(url, minSize));
   upgraded.sort(
-    (a, b) => (extractEbayImgSize(b) ?? -1) - (extractEbayImgSize(a) ?? -1)
+    (a, b) => (extractEbayImgSize(b) ?? -1) - (extractEbayImgSize(a) ?? -1),
   );
   return upgraded[0];
 }
@@ -321,7 +484,8 @@ function buildEbayQuery(input: {
 }
 
 async function fileToDataUrl(file: File): Promise<string> {
-  const type = file.type && file.type.startsWith("image/") ? file.type : "image/jpeg";
+  const type =
+    file.type && file.type.startsWith("image/") ? file.type : "image/jpeg";
   const buf = Buffer.from(await file.arrayBuffer());
   const base64 = buf.toString("base64");
   return `data:${type};base64,${base64}`;
@@ -341,7 +505,7 @@ export async function POST(request: Request) {
   if (!apiKey) {
     return NextResponse.json(
       { error: "Missing server configuration: OPENAI_API_KEY" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -350,14 +514,16 @@ export async function POST(request: Request) {
     .getAll("images")
     .filter((f): f is File => f instanceof File);
 
-  const countryRaw = String(formData.get("country") ?? "CA").trim().toUpperCase();
+  const countryRaw = String(formData.get("country") ?? "CA")
+    .trim()
+    .toUpperCase();
   const country: CountryCode =
     countryRaw in MARKETPLACE_ID_MAP ? (countryRaw as CountryCode) : "CA";
 
   if (images.length === 0) {
     return NextResponse.json(
       { error: "At least one image is required." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -368,7 +534,7 @@ export async function POST(request: Request) {
     limited.map(async (file) => ({
       type: "image_url" as const,
       image_url: { url: await fileToDataUrl(file) },
-    }))
+    })),
   );
 
   const prompt =
@@ -376,7 +542,7 @@ export async function POST(request: Request) {
     "IMPORTANT: Read any visible label text (OCR) from the grading label and the card itself. " +
     "Extract the best-guess structured fields. " +
     "Return JSON ONLY with keys: " +
-    "confidence (0-100 integer), title, year, player, manufacturer, team, league, sport, " +
+    "confidence (0-100 integer), year, player, manufacturer, team, league, sport, " +
     "set_name, card_number, condition, condition_detail, country_of_origin, " +
     "original_licensed_reprint, parallel_variety, features, season, year_manufactured, " +
     "autograph (boolean|null), is_graded (boolean|null), grading_company, grade, evidence_text. " +
@@ -404,19 +570,18 @@ export async function POST(request: Request) {
     const parsedJson = JSON.parse(content) as unknown;
     const parsed = identifyOutputSchema.parse(parsedJson);
 
-    const title = typeof parsed.title === "string" ? parsed.title.trim() || null : null;
     const evidenceText =
       typeof parsed.evidence_text === "string"
         ? parsed.evidence_text.trim() || null
         : null;
 
     const yearFromModel = coerceYear(parsed.year);
-    const yearFromText = extractYearFromText(`${title ?? ""} ${evidenceText ?? ""}`);
+    const yearFromText = extractYearFromText(`${evidenceText ?? ""}`);
     const year = yearFromModel ?? yearFromText;
 
     const result: IdentifyResult = {
       confidence: coerceConfidence(parsed.confidence),
-      title,
+      title: null,
       year,
       player:
         typeof parsed.player === "string" ? parsed.player.trim() || null : null,
@@ -427,7 +592,8 @@ export async function POST(request: Request) {
       team: typeof parsed.team === "string" ? parsed.team.trim() || null : null,
       league:
         typeof parsed.league === "string" ? parsed.league.trim() || null : null,
-      sport: typeof parsed.sport === "string" ? parsed.sport.trim() || null : null,
+      sport:
+        typeof parsed.sport === "string" ? parsed.sport.trim() || null : null,
       set_name:
         typeof parsed.set_name === "string"
           ? parsed.set_name.trim() || null
@@ -457,17 +623,27 @@ export async function POST(request: Request) {
           ? parsed.parallel_variety.trim() || null
           : null,
       features:
-        typeof parsed.features === "string" ? parsed.features.trim() || null : null,
+        typeof parsed.features === "string"
+          ? parsed.features.trim() || null
+          : null,
       season:
-        typeof parsed.season === "string" ? parsed.season.trim() || null : null,
+        typeof parsed.season === "string"
+          ? parsed.season.trim() || null
+          : typeof parsed.season === "number"
+            ? String(parsed.season)
+            : null,
       year_manufactured: coerceYear(parsed.year_manufactured),
-      autograph: typeof parsed.autograph === "boolean" ? parsed.autograph : null,
-      is_graded: typeof parsed.is_graded === "boolean" ? parsed.is_graded : null,
+      description: null,
+      autograph:
+        typeof parsed.autograph === "boolean" ? parsed.autograph : null,
+      is_graded:
+        typeof parsed.is_graded === "boolean" ? parsed.is_graded : null,
       grading_company:
         typeof parsed.grading_company === "string"
           ? parsed.grading_company.trim() || null
           : null,
-      grade: typeof parsed.grade === "string" ? parsed.grade.trim() || null : null,
+      grade:
+        typeof parsed.grade === "string" ? parsed.grade.trim() || null : null,
       evidence_text: evidenceText,
 
       estimated_price: null,
@@ -476,6 +652,56 @@ export async function POST(request: Request) {
 
       ebay_listings: [],
     };
+
+    let generatedTitle: string | null = null;
+    let description: string | null = null;
+    try {
+      generatedTitle = await generateListingTitle({
+        openai,
+        imageParts,
+        extracted: {
+          year: result.year,
+          player: result.player,
+          manufacturer: result.manufacturer,
+          set_name: result.set_name,
+          card_number: result.card_number,
+          parallel_variety: result.parallel_variety,
+          features: result.features,
+          autograph: result.autograph,
+          is_graded: result.is_graded,
+          grading_company: result.grading_company,
+          grade: result.grade,
+          evidence_text: result.evidence_text,
+        },
+      });
+    } catch {
+      generatedTitle = null;
+    }
+
+    try {
+      description = await generateListingDescription({
+        openai,
+        imageParts,
+        extracted: {
+          year,
+          player: result.player,
+          manufacturer: result.manufacturer,
+          set_name: result.set_name,
+          card_number: result.card_number,
+          grading_company: result.grading_company,
+          grade: result.grade,
+          condition: result.condition,
+          condition_detail: result.condition_detail,
+          features: result.features,
+          evidence_text: result.evidence_text,
+        },
+      });
+    } catch {
+      description = null;
+    }
+
+    result.title = generatedTitle;
+    result.description = description;
 
     // Similar items via eBay Browse API -> estimated price
     try {
@@ -526,7 +752,10 @@ export async function POST(request: Request) {
             const estimate =
               mean > 0
                 ? mean
-                : percentile([...prices].sort((a, b) => a - b), 50);
+                : percentile(
+                    [...prices].sort((a, b) => a - b),
+                    50,
+                  );
             result.estimated_price =
               estimate > 0 ? Number(estimate.toFixed(2)) : null;
             result.estimated_currency = currency || null;
@@ -549,7 +778,7 @@ export async function POST(request: Request) {
       {
         error: message,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

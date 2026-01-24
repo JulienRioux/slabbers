@@ -22,7 +22,7 @@ export default async function CardDetailPage({
   const { data: card, error } = await supabase
     .from("cards")
     .select(
-      "id,user_id,is_private,title,year,player,manufacturer,team,league,is_sport,sport,condition,condition_detail,country_of_origin,original_licensed_reprint,parallel_variety,features,season,year_manufactured,set_name,card_number,is_graded,grading_company,grade,rookie,autograph,serial_numbered,print_run,for_sale,price_cents,currency,notes,image_urls,created_at"
+      "id,user_id,is_private,title,year,player,manufacturer,team,league,is_sport,sport,condition,condition_detail,country_of_origin,original_licensed_reprint,parallel_variety,features,season,year_manufactured,set_name,card_number,is_graded,grading_company,grade,rookie,autograph,serial_numbered,print_run,for_sale,price_cents,currency,description,notes,image_urls,created_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -73,6 +73,14 @@ export default async function CardDetailPage({
         </div>
 
         <div className="grid gap-4 px-6 py-6">
+          {card.description ? (
+            <div className="bg-muted/10">
+              <div className="whitespace-pre-wrap text-sm text-foreground">
+                {card.description}
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex flex-wrap gap-2">
             {card.is_private ? (
               <Badge variant="outline">Private</Badge>
@@ -174,9 +182,7 @@ export default async function CardDetailPage({
                   Sport
                 </dt>
                 <dd className="text-right font-medium">
-                  {card.is_sport
-                    ? card.sport || "Sport"
-                    : "Non-sport"}
+                  {card.is_sport ? card.sport || "Sport" : "Non-sport"}
                 </dd>
               </div>
 
@@ -217,7 +223,6 @@ export default async function CardDetailPage({
                   </div>
                 </>
               ) : null}
-
 
               {card.condition ? (
                 <>
@@ -273,8 +278,6 @@ export default async function CardDetailPage({
                 </>
               ) : null}
 
-
-
               {card.parallel_variety ? (
                 <>
                   <div className="border-t border-border" />
@@ -326,7 +329,6 @@ export default async function CardDetailPage({
                   </div>
                 </>
               ) : null}
-
 
               {card.card_number ? (
                 <>

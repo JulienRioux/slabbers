@@ -52,6 +52,7 @@ type InitialValues = {
   autograph: boolean;
   serial_numbered: boolean;
   print_run: number | null;
+  description: string | null;
   notes: string | null;
 };
 
@@ -108,12 +109,10 @@ export function EditCardForm({
   const [year, setYear] = React.useState(String(initialValues.year ?? ""));
   const [player, setPlayer] = React.useState(initialValues.player ?? "");
   const [manufacturer, setManufacturer] = React.useState(
-    initialValues.manufacturer ?? ""
+    initialValues.manufacturer ?? "",
   );
 
-  const [isSport, setIsSport] = React.useState(
-    Boolean(initialValues.is_sport)
-  );
+  const [isSport, setIsSport] = React.useState(Boolean(initialValues.is_sport));
   const [sportChoice, setSportChoice] = React.useState<string>(() => {
     const initial = String(initialValues.sport ?? "").trim();
     if (!initial) return "";
@@ -126,80 +125,84 @@ export function EditCardForm({
   const [team, setTeam] = React.useState(initialValues.team ?? "");
   const [league, setLeague] = React.useState(initialValues.league ?? "");
 
-  const [condition, setCondition] = React.useState(initialValues.condition ?? "");
+  const [condition, setCondition] = React.useState(
+    initialValues.condition ?? "",
+  );
   const [conditionDetail, setConditionDetail] = React.useState(
-    initialValues.condition_detail ?? ""
+    initialValues.condition_detail ?? "",
   );
   const [countryOfOrigin, setCountryOfOrigin] = React.useState(
-    initialValues.country_of_origin ?? ""
+    initialValues.country_of_origin ?? "",
   );
   const [originalLicensedReprint, setOriginalLicensedReprint] = React.useState<
     (typeof ORIGINAL_LICENSED_REPRINT_OPTIONS)[number] | ""
   >(
     (ORIGINAL_LICENSED_REPRINT_OPTIONS as readonly string[]).includes(
-      String(initialValues.original_licensed_reprint ?? "")
+      String(initialValues.original_licensed_reprint ?? ""),
     )
       ? (initialValues.original_licensed_reprint as (typeof ORIGINAL_LICENSED_REPRINT_OPTIONS)[number])
-      : ""
+      : "",
   );
   const [parallelVariety, setParallelVariety] = React.useState(
-    initialValues.parallel_variety ?? ""
+    initialValues.parallel_variety ?? "",
   );
-  const [features, setFeatures] = React.useState(
-    initialValues.features ?? ""
-  );
+  const [features, setFeatures] = React.useState(initialValues.features ?? "");
   const [season, setSeason] = React.useState(initialValues.season ?? "");
   const [yearManufactured, setYearManufactured] = React.useState(
     initialValues.year_manufactured != null
       ? String(initialValues.year_manufactured)
-      : ""
+      : "",
   );
 
   const [isPrivate, setIsPrivate] = React.useState(
-    Boolean(initialValues.is_private)
+    Boolean(initialValues.is_private),
   );
 
   const [forSale, setForSale] = React.useState(Boolean(initialValues.for_sale));
   const [priceCad, setPriceCad] = React.useState(
     initialValues.price_cents != null
       ? String((initialValues.price_cents / 100).toFixed(2))
-      : ""
+      : "",
   );
   const [priceCurrency, setPriceCurrency] = React.useState<
     (typeof CURRENCIES)[number]
   >(
     (CURRENCIES as readonly string[]).includes(
-      String(initialValues.currency).toUpperCase()
+      String(initialValues.currency).toUpperCase(),
     )
-      ? (String(initialValues.currency).toUpperCase() as (typeof CURRENCIES)[number])
-      : CURRENCIES[0]
+      ? (String(
+          initialValues.currency,
+        ).toUpperCase() as (typeof CURRENCIES)[number])
+      : CURRENCIES[0],
   );
-
 
   const [setName, setSetName] = React.useState(initialValues.set_name ?? "");
   const [cardNumber, setCardNumber] = React.useState(
-    initialValues.card_number ?? ""
+    initialValues.card_number ?? "",
   );
 
   const [isGraded, setIsGraded] = React.useState(
-    Boolean(initialValues.is_graded)
+    Boolean(initialValues.is_graded),
   );
   const [gradingCompany, setGradingCompany] = React.useState(
-    initialValues.grading_company ?? ""
+    initialValues.grading_company ?? "",
   );
   const [grade, setGrade] = React.useState(initialValues.grade ?? "");
 
   const [rookie, setRookie] = React.useState(Boolean(initialValues.rookie));
   const [autograph, setAutograph] = React.useState(
-    Boolean(initialValues.autograph)
+    Boolean(initialValues.autograph),
   );
   const [serialNumbered, setSerialNumbered] = React.useState(
-    Boolean(initialValues.serial_numbered)
+    Boolean(initialValues.serial_numbered),
   );
   const [printRun, setPrintRun] = React.useState(
-    initialValues.print_run != null ? String(initialValues.print_run) : ""
+    initialValues.print_run != null ? String(initialValues.print_run) : "",
   );
 
+  const [description, setDescription] = React.useState(
+    initialValues.description ?? "",
+  );
   const [notes, setNotes] = React.useState(initialValues.notes ?? "");
 
   const [error, setError] = React.useState<string | null>(null);
@@ -233,7 +236,6 @@ export function EditCardForm({
       }
       priceCents = Math.round(parsedPrice * 100);
     }
-
 
     const effectiveSport =
       sportChoice === "Other" ? sportCustom.trim() : sportChoice.trim();
@@ -287,6 +289,7 @@ export function EditCardForm({
           serial_numbered: serialNumbered,
           print_run:
             serialNumbered && printRun.trim() ? Number(printRun) : null,
+          description: description.trim() ? description.trim() : null,
           notes: notes.trim() ? notes.trim() : null,
         }),
       });
@@ -530,7 +533,7 @@ export function EditCardForm({
                   value={originalLicensedReprint || undefined}
                   onValueChange={(next) =>
                     setOriginalLicensedReprint(
-                      next as (typeof ORIGINAL_LICENSED_REPRINT_OPTIONS)[number]
+                      next as (typeof ORIGINAL_LICENSED_REPRINT_OPTIONS)[number],
                     )
                   }
                 >
@@ -610,7 +613,6 @@ export function EditCardForm({
               />
             </div>
 
-
             <div className="grid gap-3">
               <Label>Grading</Label>
               <div className="flex items-center gap-2">
@@ -646,7 +648,10 @@ export function EditCardForm({
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="grade">Grade</Label>
-                    <Select value={grade || undefined} onValueChange={(next) => setGrade(next)}>
+                    <Select
+                      value={grade || undefined}
+                      onValueChange={(next) => setGrade(next)}
+                    >
                       <SelectTrigger id="grade">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
@@ -715,6 +720,20 @@ export function EditCardForm({
                   />
                 </div>
               ) : null}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description">Listing description</Label>
+              <textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g. 2003 Topps Chrome LeBron James RC #111. Clean corners, slight surface wear. See photos for condition."
+                className="min-h-[140px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+              <p className="text-xs text-muted-foreground">
+                Write an eBay-style listing description (condition, highlights, flaws, anything notable).
+              </p>
             </div>
 
             <div className="grid gap-2">

@@ -22,7 +22,7 @@ export default async function EditCardPage({
   const { data: card, error } = await supabase
     .from("cards")
     .select(
-      "id,user_id,is_private,title,year,player,manufacturer,team,league,is_sport,sport,condition,condition_detail,country_of_origin,original_licensed_reprint,parallel_variety,features,season,year_manufactured,set_name,card_number,is_graded,grading_company,grade,rookie,autograph,serial_numbered,print_run,for_sale,price_cents,currency,notes"
+      "id,user_id,is_private,title,year,player,manufacturer,team,league,is_sport,sport,condition,condition_detail,country_of_origin,original_licensed_reprint,parallel_variety,features,season,year_manufactured,set_name,card_number,is_graded,grading_company,grade,rookie,autograph,serial_numbered,print_run,for_sale,price_cents,currency,description,notes",
     )
     .eq("id", id)
     .maybeSingle();
@@ -69,6 +69,7 @@ export default async function EditCardPage({
           autograph: Boolean(card.autograph),
           serial_numbered: Boolean(card.serial_numbered),
           print_run: card.print_run,
+          description: card.description,
           notes: card.notes,
         }}
       />

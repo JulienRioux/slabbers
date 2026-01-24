@@ -56,7 +56,6 @@ export async function POST(request: Request) {
   const priceCents = parseOptionalInt(formData.get("price_cents"));
   const currency = String(formData.get("currency") ?? "CAD").trim() || "CAD";
 
-
   const setName = String(formData.get("set_name") ?? "").trim() || null;
   const cardNumber = String(formData.get("card_number") ?? "").trim() || null;
 
@@ -70,6 +69,7 @@ export async function POST(request: Request) {
   const serialNumbered = parseBoolean(formData.get("serial_numbered"));
   const printRun = parseOptionalInt(formData.get("print_run"));
 
+  const description = String(formData.get("description") ?? "").trim() || null;
   const notes = String(formData.get("notes") ?? "").trim() || null;
 
   const frontImageRaw = formData.get("front_image");
@@ -84,21 +84,21 @@ export async function POST(request: Request) {
   if (!title || !player || !manufacturer || !year) {
     return NextResponse.json(
       { error: "Missing required fields: title, year, player, manufacturer." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (isSport && !sport) {
     return NextResponse.json(
       { error: "sport is required when is_sport is true." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (!frontImage || !backImage) {
     return NextResponse.json(
       { error: "front_image and back_image are required." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     if (!priceCents || priceCents <= 0) {
       return NextResponse.json(
         { error: "price_cents is required when for_sale is true." },
-        { status: 400 }
+        { status: 400 },
       );
     }
   }
@@ -123,7 +123,9 @@ export async function POST(request: Request) {
   } catch (e: unknown) {
     const err = e as Record<string, unknown> | null;
     const message =
-      err && typeof err.message === "string" ? err.message : "Image upload failed.";
+      err && typeof err.message === "string"
+        ? err.message
+        : "Image upload failed.";
     return NextResponse.json(
       {
         stage: "upload",
@@ -132,7 +134,7 @@ export async function POST(request: Request) {
         details: (err?.details ?? null) as unknown,
         hint: (err?.hint ?? null) as unknown,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -172,6 +174,7 @@ export async function POST(request: Request) {
       for_sale: forSale,
       price_cents: forSale ? priceCents : null,
       currency,
+      description,
       notes,
       front_image_url: frontImageUrl,
       back_image_url: backImageUrl,
@@ -188,12 +191,13 @@ export async function POST(request: Request) {
         code:
           ("code" in error ? (error as { code?: unknown }).code : null) ?? null,
         details:
-          ("details" in error ? (error as { details?: unknown }).details : null) ??
-          null,
+          ("details" in error
+            ? (error as { details?: unknown }).details
+            : null) ?? null,
         hint:
           ("hint" in error ? (error as { hint?: unknown }).hint : null) ?? null,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

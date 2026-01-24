@@ -110,7 +110,7 @@ export async function getCardsPage(args: {
           .not(
             "grading_company",
             "in",
-            `(${KNOWN_GRADING_COMPANIES.map((c) => `"${c}"`).join(",")})`
+            `(${KNOWN_GRADING_COMPANIES.map((c) => `"${c}"`).join(",")})`,
           )
           .not("grading_company", "is", null);
       } else {
@@ -149,7 +149,7 @@ export async function getCardsPage(args: {
           `manufacturer.ilike.${pattern}`,
           `set_name.ilike.${pattern}`,
           `card_number.ilike.${pattern}`,
-        ].join(",")
+        ].join(","),
       );
     }
 

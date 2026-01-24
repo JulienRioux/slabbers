@@ -4,12 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -94,6 +89,7 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
     features: string | null;
     season: string | null;
     year_manufactured: number | null;
+    description: string | null;
     estimated_price: number | null;
     estimated_currency: string | null;
     autograph: boolean | null;
@@ -132,11 +128,7 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
         return { title, price, currency, web_url, image_url };
       })
       .filter(
-        (x) =>
-          x.title &&
-          x.web_url &&
-          Number.isFinite(x.price) &&
-          x.price > 0
+        (x) => x.title && x.web_url && Number.isFinite(x.price) && x.price > 0,
       )
       .slice(0, 6);
   }
@@ -171,7 +163,6 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
     (typeof CURRENCIES)[number]
   >(CURRENCIES[0]);
 
-
   const [setName, setSetName] = React.useState("");
   const [cardNumber, setCardNumber] = React.useState("");
 
@@ -184,32 +175,38 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
   const [serialNumbered, setSerialNumbered] = React.useState(false);
   const [printRun, setPrintRun] = React.useState("");
 
+  const [description, setDescription] = React.useState("");
   const [notes, setNotes] = React.useState("");
 
-  const [step, setStep] = React.useState<1 | 2 | 3>(1);
+  const [step, setStep] = React.useState<1 | 2>(1);
 
   const frontInputRef = React.useRef<HTMLInputElement | null>(null);
   const backInputRef = React.useRef<HTMLInputElement | null>(null);
   const optionalInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const [frontImage, setFrontImage] = React.useState<SelectedImage | null>(
-    null
+    null,
   );
   const [backImage, setBackImage] = React.useState<SelectedImage | null>(null);
   const [optionalImages, setOptionalImages] = React.useState<SelectedImage[]>(
-    []
+    [],
   );
 
-  const [identifyResult, setIdentifyResult] = React.useState<IdentifyResult | null>(
-    null
-  );
+  const [identifyResult, setIdentifyResult] =
+    React.useState<IdentifyResult | null>(null);
   const [identifyError, setIdentifyError] = React.useState<string | null>(null);
   const [isIdentifying, setIsIdentifying] = React.useState(false);
+
+  const [isCroppingFront, setIsCroppingFront] = React.useState(false);
+  const [isCroppingBack, setIsCroppingBack] = React.useState(false);
+  const [cropError, setCropError] = React.useState<string | null>(null);
 
   const [error, setError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const objectUrlsRef = React.useRef<Set<string>>(new Set());
+  const frontCropTokenRef = React.useRef(0);
+  const backCropTokenRef = React.useRef(0);
 
   React.useEffect(() => {
     const urls = objectUrlsRef.current;
@@ -236,39 +233,110 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
     objectUrlsRef.current.delete(img.url);
   }
 
-  function onPickFront(fileList: FileList | null) {
-    const file = Array.from(fileList ?? []).find(
-      (f) => f instanceof File && (f.type?.startsWith("image/") ?? false)
-    );
-    if (!file) return;
-
-    setFrontImage((prev) => {
-      revokeSelectedImage(prev);
-      return makeSelectedImage(file);
-    });
-
-    setIdentifyResult(null);
-    setIdentifyError(null);
+  function buildCroppedFileName(file: File) {
+    const name = file.name || "card";
+    const base = name.replace(/\.[^.]+$/, "");
+    const suffix = base.endsWith("-cropped") ? base : `${base}-cropped`;
+    return `${suffix}.jpg`;
   }
 
-  function onPickBack(fileList: FileList | null) {
+  async function requestCrop(file: File): Promise<File> {
+    const fd = new FormData();
+    fd.append("image", file);
+
+    const res = await fetch("/api/card/crop", {
+      method: "POST",
+      body: fd,
+    });
+
+    if (!res.ok) {
+      const json = (await res.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      throw new Error(json?.error ?? "Failed to crop image.");
+    }
+
+    const blob = await res.blob();
+    return new File([blob], buildCroppedFileName(file), {
+      type: blob.type || "image/jpeg",
+    });
+  }
+
+  async function onPickFront(fileList: FileList | null) {
     const file = Array.from(fileList ?? []).find(
-      (f) => f instanceof File && (f.type?.startsWith("image/") ?? false)
+      (f) => f instanceof File && (f.type?.startsWith("image/") ?? false),
     );
     if (!file) return;
 
-    setBackImage((prev) => {
+    const token = ++frontCropTokenRef.current;
+    setCropError(null);
+
+    const initial = makeSelectedImage(file);
+    setFrontImage((prev) => {
       revokeSelectedImage(prev);
-      return makeSelectedImage(file);
+      return initial;
     });
 
     setIdentifyResult(null);
     setIdentifyError(null);
+
+    setIsCroppingFront(true);
+    try {
+      const cropped = await requestCrop(file);
+      if (frontCropTokenRef.current !== token) return;
+      setFrontImage((prev) => {
+        revokeSelectedImage(prev);
+        return makeSelectedImage(cropped);
+      });
+    } catch (e: unknown) {
+      if (frontCropTokenRef.current !== token) return;
+      const message =
+        e instanceof Error ? e.message : "Failed to crop front image.";
+      setCropError(message);
+    } finally {
+      if (frontCropTokenRef.current === token) setIsCroppingFront(false);
+    }
+  }
+
+  async function onPickBack(fileList: FileList | null) {
+    const file = Array.from(fileList ?? []).find(
+      (f) => f instanceof File && (f.type?.startsWith("image/") ?? false),
+    );
+    if (!file) return;
+
+    const token = ++backCropTokenRef.current;
+    setCropError(null);
+
+    const initial = makeSelectedImage(file);
+    setBackImage((prev) => {
+      revokeSelectedImage(prev);
+      return initial;
+    });
+
+    setIdentifyResult(null);
+    setIdentifyError(null);
+
+    setIsCroppingBack(true);
+    try {
+      const cropped = await requestCrop(file);
+      if (backCropTokenRef.current !== token) return;
+      setBackImage((prev) => {
+        revokeSelectedImage(prev);
+        return makeSelectedImage(cropped);
+      });
+    } catch (e: unknown) {
+      if (backCropTokenRef.current !== token) return;
+      const message =
+        e instanceof Error ? e.message : "Failed to crop back image.";
+      setCropError(message);
+    } finally {
+      if (backCropTokenRef.current === token) setIsCroppingBack(false);
+    }
   }
 
   function addOptionalFiles(fileList: FileList | null) {
     const nextFiles = Array.from(fileList ?? []).filter(
-      (f) => f instanceof File && (f.type?.startsWith("image/") ?? false)
+      (f) => f instanceof File && (f.type?.startsWith("image/") ?? false),
     );
     if (nextFiles.length === 0) return;
 
@@ -312,7 +380,9 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
         body: fd,
       });
 
-      const json = (await res.json().catch(() => ({}))) as Partial<IdentifyResult> & {
+      const json = (await res
+        .json()
+        .catch(() => ({}))) as Partial<IdentifyResult> & {
         error?: string;
       };
       if (!res.ok) {
@@ -330,7 +400,8 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
         league: typeof json.league === "string" ? json.league : null,
         sport: typeof json.sport === "string" ? json.sport : null,
         set_name: typeof json.set_name === "string" ? json.set_name : null,
-        card_number: typeof json.card_number === "string" ? json.card_number : null,
+        card_number:
+          typeof json.card_number === "string" ? json.card_number : null,
         condition: typeof json.condition === "string" ? json.condition : null,
         condition_detail:
           typeof json.condition_detail === "string"
@@ -354,8 +425,12 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
           typeof json.year_manufactured === "number"
             ? json.year_manufactured
             : null,
+        description:
+          typeof json.description === "string" ? json.description : null,
         estimated_price:
-          typeof json.estimated_price === "number" ? json.estimated_price : null,
+          typeof json.estimated_price === "number"
+            ? json.estimated_price
+            : null,
         estimated_currency:
           typeof json.estimated_currency === "string"
             ? json.estimated_currency
@@ -363,19 +438,25 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
         autograph: typeof json.autograph === "boolean" ? json.autograph : null,
         is_graded: typeof json.is_graded === "boolean" ? json.is_graded : null,
         grading_company:
-          typeof json.grading_company === "string" ? json.grading_company : null,
+          typeof json.grading_company === "string"
+            ? json.grading_company
+            : null,
         grade: typeof json.grade === "string" ? json.grade : null,
         evidence_text:
           typeof json.evidence_text === "string" ? json.evidence_text : null,
 
         ebay_listings_used:
-          typeof json.ebay_listings_used === "number" ? json.ebay_listings_used : 0,
+          typeof json.ebay_listings_used === "number"
+            ? json.ebay_listings_used
+            : 0,
 
         ebay_listings: parseEbayListings(json.ebay_listings),
       });
 
-      if (typeof json.title === "string" && json.title.trim()) setTitle(json.title);
-      if (typeof json.player === "string" && json.player.trim()) setPlayer(json.player);
+      if (typeof json.title === "string" && json.title.trim())
+        setTitle(json.title);
+      if (typeof json.player === "string" && json.player.trim())
+        setPlayer(json.player);
       if (typeof json.manufacturer === "string" && json.manufacturer.trim())
         setManufacturer(json.manufacturer);
       if (typeof json.team === "string" && json.team.trim()) setTeam(json.team);
@@ -399,9 +480,15 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
         setCardNumber(json.card_number);
       if (typeof json.condition === "string" && json.condition.trim())
         setCondition(json.condition);
-      if (typeof json.condition_detail === "string" && json.condition_detail.trim())
+      if (
+        typeof json.condition_detail === "string" &&
+        json.condition_detail.trim()
+      )
         setConditionDetail(json.condition_detail);
-      if (typeof json.country_of_origin === "string" && json.country_of_origin.trim())
+      if (
+        typeof json.country_of_origin === "string" &&
+        json.country_of_origin.trim()
+      )
         setCountryOfOrigin(json.country_of_origin);
       if (
         typeof json.original_licensed_reprint === "string" &&
@@ -410,15 +497,18 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
         const nextValue = json.original_licensed_reprint.trim();
         if (
           (ORIGINAL_LICENSED_REPRINT_OPTIONS as readonly string[]).includes(
-            nextValue
+            nextValue,
           )
         ) {
           setOriginalLicensedReprint(
-            nextValue as (typeof ORIGINAL_LICENSED_REPRINT_OPTIONS)[number]
+            nextValue as (typeof ORIGINAL_LICENSED_REPRINT_OPTIONS)[number],
           );
         }
       }
-      if (typeof json.parallel_variety === "string" && json.parallel_variety.trim())
+      if (
+        typeof json.parallel_variety === "string" &&
+        json.parallel_variety.trim()
+      )
         setParallelVariety(json.parallel_variety);
       if (typeof json.features === "string" && json.features.trim())
         setFeatures(json.features);
@@ -432,19 +522,30 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
 
       if (typeof json.autograph === "boolean") setAutograph(json.autograph);
       if (typeof json.is_graded === "boolean") setIsGraded(json.is_graded);
-      if (typeof json.grading_company === "string" && json.grading_company.trim())
+      if (
+        typeof json.grading_company === "string" &&
+        json.grading_company.trim()
+      )
         setGradingCompany(json.grading_company);
-      if (typeof json.grade === "string" && json.grade.trim()) setGrade(json.grade);
+      if (typeof json.grade === "string" && json.grade.trim())
+        setGrade(json.grade);
 
-      if (typeof json.estimated_price === "number" && Number.isFinite(json.estimated_price)) {
+      if (
+        typeof json.estimated_price === "number" &&
+        Number.isFinite(json.estimated_price)
+      ) {
         setPriceCad(String(json.estimated_price.toFixed(2)));
         setForSale(true);
       }
 
+      if (typeof json.description === "string" && json.description.trim()) {
+        setDescription((prev) => (prev.trim() ? prev : json.description));
+      }
 
       return true;
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Failed to identify card.";
+      const message =
+        e instanceof Error ? e.message : "Failed to identify card.";
       setIdentifyError(message);
       return false;
     } finally {
@@ -452,7 +553,7 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
     }
   }
 
-  async function continueFromBackStep() {
+  async function continueFromImagesStep() {
     setError(null);
 
     if (!frontImage) {
@@ -467,7 +568,7 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
     }
 
     const ok = await runIdentification();
-    if (ok) setStep(3);
+    if (ok) setStep(2);
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -475,7 +576,7 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
 
     setError(null);
 
-    if (step !== 3) {
+    if (step !== 2) {
       setError("Please complete identification first.");
       setStep(1);
       return;
@@ -512,7 +613,6 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
       priceCents = Math.round(parsedPrice * 100);
     }
 
-
     const effectiveSport =
       sportChoice === "Other" ? sportCustom.trim() : sportChoice.trim();
     if (isSport && !effectiveSport) {
@@ -530,8 +630,7 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
       formData.set("team", team.trim());
       formData.set("league", league.trim());
       formData.set("is_sport", String(isSport));
-      if (isSport && effectiveSport)
-        formData.set("sport", effectiveSport);
+      if (isSport && effectiveSport) formData.set("sport", effectiveSport);
       if (condition.trim()) formData.set("condition", condition.trim());
       if (conditionDetail.trim())
         formData.set("condition_detail", conditionDetail.trim());
@@ -553,7 +652,6 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
       }
       formData.set("currency", priceCurrency);
 
-
       if (setName.trim()) formData.set("set_name", setName.trim());
       if (cardNumber.trim()) formData.set("card_number", cardNumber.trim());
 
@@ -567,6 +665,7 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
       formData.set("serial_numbered", String(serialNumbered));
       if (serialNumbered && printRun) formData.set("print_run", printRun);
 
+      if (description.trim()) formData.set("description", description.trim());
       if (notes.trim()) formData.set("notes", notes.trim());
 
       formData.append("front_image", frontImage.file);
@@ -633,7 +732,7 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
                   accept="image/*"
                   capture="environment"
                   onChange={(e) => {
-                    onPickFront(e.target.files);
+                    void onPickFront(e.target.files);
                     e.currentTarget.value = "";
                   }}
                 />
@@ -657,20 +756,6 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
                 )}
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  disabled={!frontImage}
-                  onClick={() => setStep(2)}
-                >
-                  Continue
-                </Button>
-              </div>
-            </div>
-          ) : null}
-
-          {step === 2 ? (
-            <div className="grid gap-4">
               <div className="grid gap-3">
                 <Label>Back image</Label>
                 <div className="flex items-center justify-between gap-3">
@@ -692,7 +777,7 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
                   accept="image/*"
                   capture="environment"
                   onChange={(e) => {
-                    onPickBack(e.target.files);
+                    void onPickBack(e.target.files);
                     e.currentTarget.value = "";
                   }}
                 />
@@ -719,18 +804,29 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
               {isIdentifying ? (
                 <p className="text-sm text-muted-foreground">Identifying…</p>
               ) : null}
+              {isCroppingFront || isCroppingBack ? (
+                <p className="text-sm text-muted-foreground">
+                  Cropping images…
+                </p>
+              ) : null}
               {identifyError ? (
                 <p className="text-sm text-destructive">{identifyError}</p>
               ) : null}
+              {cropError ? (
+                <p className="text-sm text-destructive">{cropError}</p>
+              ) : null}
 
               <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => setStep(1)}>
-                  Back
-                </Button>
                 <Button
                   type="button"
-                  disabled={!frontImage || !backImage || isIdentifying}
-                  onClick={() => void continueFromBackStep()}
+                  disabled={
+                    !frontImage ||
+                    !backImage ||
+                    isIdentifying ||
+                    isCroppingFront ||
+                    isCroppingBack
+                  }
+                  onClick={() => void continueFromImagesStep()}
                 >
                   Continue
                 </Button>
@@ -738,7 +834,7 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
             </div>
           ) : null}
 
-          {step === 3 ? (
+          {step === 2 ? (
             <>
               {identifyResult ? (
                 <p className="text-sm text-muted-foreground">
@@ -758,7 +854,7 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
                   (
                   {Math.max(
                     0,
-                    Math.min(100, Math.round(identifyResult.confidence))
+                    Math.min(100, Math.round(identifyResult.confidence)),
                   )}
                   % confidence)
                 </p>
@@ -826,14 +922,18 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
               </div>
 
               <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => setStep(2)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep(1)}
+                >
                   Back
                 </Button>
               </div>
             </>
           ) : null}
 
-          {step === 3 ? (
+          {step === 2 ? (
             <>
               <div className="grid gap-2">
                 <Label htmlFor="title">Title</Label>
@@ -1051,7 +1151,7 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
                       value={originalLicensedReprint || undefined}
                       onValueChange={(next) =>
                         setOriginalLicensedReprint(
-                          next as (typeof ORIGINAL_LICENSED_REPRINT_OPTIONS)[number]
+                          next as (typeof ORIGINAL_LICENSED_REPRINT_OPTIONS)[number],
                         )
                       }
                     >
@@ -1130,7 +1230,6 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
                     onChange={(e) => setCardNumber(e.target.value)}
                   />
                 </div>
-
 
                 <div className="grid gap-3">
                   <Label>Grading</Label>
@@ -1242,6 +1341,17 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
                 </div>
 
                 <div className="grid gap-2">
+                  <Label htmlFor="description">Listing description</Label>
+                  <textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="e.g. 2003 Topps Chrome LeBron James RC #111. Clean corners, slight surface wear. See photos for condition."
+                    className="min-h-[140px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+
+                <div className="grid gap-2">
                   <Label htmlFor="notes">Notes</Label>
                   <textarea
                     id="notes"
@@ -1253,7 +1363,9 @@ export function AddCardForm({ userEmail: _userEmail }: Props) {
                 </div>
               </div>
 
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              {error ? (
+                <p className="text-sm text-destructive">{error}</p>
+              ) : null}
 
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Saving…" : "Add card"}

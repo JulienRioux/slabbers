@@ -57,7 +57,7 @@ function storagePathFromPublicUrl(url: string) {
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
 
@@ -117,7 +117,7 @@ export async function DELETE(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
 
@@ -153,7 +153,7 @@ export async function PATCH(
   const conditionDetail = toOptionalTrimmedString(payload?.condition_detail);
   const countryOfOrigin = toOptionalTrimmedString(payload?.country_of_origin);
   const originalLicensedReprint = toOptionalTrimmedString(
-    payload?.original_licensed_reprint
+    payload?.original_licensed_reprint,
   );
   const parallelVariety = toOptionalTrimmedString(payload?.parallel_variety);
   const features = toOptionalTrimmedString(payload?.features);
@@ -165,7 +165,6 @@ export async function PATCH(
   const forSale = toBoolean(payload?.for_sale);
   const priceCents = toOptionalInt(payload?.price_cents);
   const currency = toRequiredTrimmedString(payload?.currency) || "CAD";
-
 
   const setName = toOptionalTrimmedString(payload?.set_name);
   const cardNumber = toOptionalTrimmedString(payload?.card_number);
@@ -179,19 +178,20 @@ export async function PATCH(
   const serialNumbered = toBoolean(payload?.serial_numbered);
   const printRun = toOptionalInt(payload?.print_run);
 
+  const description = toOptionalTrimmedString(payload?.description);
   const notes = toOptionalTrimmedString(payload?.notes);
 
   if (!title || !player || !manufacturer || !year) {
     return NextResponse.json(
       { error: "Missing required fields: title, year, player, manufacturer." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (isSport && !sport) {
     return NextResponse.json(
       { error: "sport is required when is_sport is true." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -199,7 +199,7 @@ export async function PATCH(
     if (!priceCents || priceCents <= 0) {
       return NextResponse.json(
         { error: "price_cents is required when for_sale is true." },
-        { status: 400 }
+        { status: 400 },
       );
     }
   }
@@ -236,6 +236,7 @@ export async function PATCH(
       for_sale: forSale,
       price_cents: forSale ? priceCents : null,
       currency,
+      description,
       notes,
     })
     .eq("id", id)
