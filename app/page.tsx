@@ -110,15 +110,24 @@ export default async function Home() {
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="grid gap-2 text-sm">
               <p className="font-medium text-foreground">Explore</p>
-              <Link href="/browse" className="text-muted-foreground hover:text-foreground">
+              <Link
+                href="/browse"
+                className="text-muted-foreground hover:text-foreground"
+              >
                 Browse cards
               </Link>
               {user ? (
-                <Link href="/add" className="text-muted-foreground hover:text-foreground">
+                <Link
+                  href="/add"
+                  className="text-muted-foreground hover:text-foreground"
+                >
                   Add a card
                 </Link>
               ) : (
-                <Link href="/login" className="text-muted-foreground hover:text-foreground">
+                <Link
+                  href="/login"
+                  className="text-muted-foreground hover:text-foreground"
+                >
                   Sign in
                 </Link>
               )}

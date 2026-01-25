@@ -107,7 +107,6 @@ export function CardsGalleryClient({
     return params.toString();
   }, [pageSize, searchParams, userId]);
 
-
   const getKey = React.useCallback(
     (pageIndex: number, previousPage: CardsPageResult | null) => {
       if (maxPages && pageIndex >= maxPages) return null;
@@ -130,8 +129,7 @@ export function CardsGalleryClient({
     },
   );
 
-
-  const pages = data ?? [];
+  const pages = React.useMemo(() => data ?? [], [data]);
   const items = React.useMemo(
     () => pages.flatMap((page) => page.items),
     [pages],
@@ -164,7 +162,7 @@ export function CardsGalleryClient({
     <div className="lg:flex lg:gap-6">
       {showFilters ? (
         <aside className="hidden lg:block lg:w-[320px] lg:shrink-0 lg:border-r lg:border-border lg:pr-6">
-          <div className="sticky h-[calc(100dvh-4rem)] py-6">
+          <div className="sticky top-16 h-[calc(100dvh-6rem)] overflow-y-auto pr-2">
             <CardsFilters />
           </div>
         </aside>

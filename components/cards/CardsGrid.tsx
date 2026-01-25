@@ -76,10 +76,7 @@ export function CardsGrid({
         const ownerLabel = card.owner?.username || fallbackLabel;
         const hasPrice = Boolean(card.for_sale && card.price_cents);
         return (
-          <div
-            key={card.id}
-            className={itemClassName}
-          >
+          <div key={card.id} className={itemClassName}>
             <Link
               href={`/card/${card.id}`}
               aria-label={card.title}
@@ -93,7 +90,7 @@ export function CardsGrid({
                 <img
                   src={image}
                   alt={card.title}
-                  className="aspect-[5/7] w-full rounded-none object-cover"
+                  className="aspect-[5/7] w-full rounded-none object-cover bg-muted"
                 />
               ) : (
                 <div className="flex aspect-[5/7] items-center justify-center rounded-none bg-card text-sm text-muted-foreground">
