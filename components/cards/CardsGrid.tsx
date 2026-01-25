@@ -38,10 +38,12 @@ export function CardsGrid({
   cards,
   emptyTitle = "No cards yet",
   emptyDescription = "Add the first card to start the gallery.",
+  layout = "grid",
 }: {
   cards: CardRow[] | null | undefined;
   emptyTitle?: string;
   emptyDescription?: string;
+  layout?: "grid" | "row";
 }) {
   if (!cards || cards.length === 0) {
     return (
@@ -56,8 +58,18 @@ export function CardsGrid({
     );
   }
 
+  const containerClassName =
+    layout === "row"
+      ? "flex w-full gap-6 overflow-x-auto pb-2"
+      : "grid w-full grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] items-start justify-items-start gap-6";
+
+  const itemClassName =
+    layout === "row"
+      ? "group relative grid w-[220px] shrink-0 gap-3 rounded-none border border-transparent bg-card sm:w-[240px]"
+      : "group relative grid w-full max-w-[240px] gap-3 rounded-none border border-transparent bg-card";
+
   return (
-    <div className="grid w-full grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] items-start justify-items-start gap-6">
+    <div className={containerClassName}>
       {cards.map((card) => {
         const image = card.image_urls?.[0];
         const fallbackLabel = card.user_id ? card.user_id.slice(0, 8) : "";
@@ -66,7 +78,7 @@ export function CardsGrid({
         return (
           <div
             key={card.id}
-            className="group relative grid w-full max-w-[240px] gap-3 rounded-none border border-transparent bg-card"
+            className={itemClassName}
           >
             <Link
               href={`/card/${card.id}`}
