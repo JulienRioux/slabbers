@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/cards/money";
@@ -43,6 +44,20 @@ export default async function CardDetailPage({
     .maybeSingle();
 
   const ownerLabel = ownerProfile?.username || String(card.user_id).slice(0, 8);
+
+  const ebayQuery = [
+    card.year ? String(card.year) : null,
+    card.player ? String(card.player) : null,
+    card.manufacturer ? String(card.manufacturer) : null,
+    card.set_name ? String(card.set_name) : null,
+    card.card_number ? `#${card.card_number}` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const ebaySoldUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(
+    ebayQuery || String(card.title),
+  )}&LH_Sold=1&LH_Complete=1`;
 
   return (
     <div className="mx-auto grid max-w-5xl gap-8 py-8 lg:grid-cols-2">
@@ -102,6 +117,18 @@ export default async function CardDetailPage({
             ) : (
               <Badge variant="outline">Not for sale</Badge>
             )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link
+                href={ebaySoldUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                View sold on eBay
+              </Link>
+            </Button>
           </div>
 
           {card.for_sale && card.price_cents ? (

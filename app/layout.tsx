@@ -81,18 +81,23 @@ async function Header() {
           <NavbarBackButton />
 
           {user ? (
-            <Button asChild aria-label="Add card">
-              <Link href="/add">
+            <Button asChild aria-label="Add card" className="sm:w-auto">
+              <Link href="/add" className="flex items-center sm:gap-2">
                 <IconPlus className="h-5 w-5" />
-                Add card
+                <span className="hidden sm:inline">Add card</span>
               </Link>
             </Button>
           ) : null}
 
-          <Button asChild variant="outline" aria-label="Browse">
-            <Link href="/browse">
+          <Button
+            asChild
+            variant="outline"
+            aria-label="Browse"
+            className="sm:w-auto"
+          >
+            <Link href="/browse" className="flex items-center sm:gap-2">
               <IconCompass className="h-5 w-5" />
-              Browse
+              <span className="hidden sm:inline">Browse</span>
             </Link>
           </Button>
 

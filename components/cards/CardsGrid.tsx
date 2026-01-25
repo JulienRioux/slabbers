@@ -57,7 +57,7 @@ export function CardsGrid({
   }
 
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] items-start justify-items-center gap-6">
+    <div className="grid w-full grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] items-start justify-items-start gap-6">
       {cards.map((card) => {
         const image = card.image_urls?.[0];
         const fallbackLabel = card.user_id ? card.user_id.slice(0, 8) : "";
@@ -66,7 +66,7 @@ export function CardsGrid({
         return (
           <div
             key={card.id}
-            className="group relative grid w-full max-w-[360px] gap-3 rounded-none border border-transparent bg-card p-2 transition-colors hover:border-border"
+            className="group relative grid w-full max-w-[240px] gap-3 rounded-none border border-transparent bg-card"
           >
             <Link
               href={`/card/${card.id}`}

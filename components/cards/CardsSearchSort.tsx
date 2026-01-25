@@ -89,11 +89,13 @@ export function CardsSearchSort({
 
   React.useEffect(() => {
     if (!showSearch) return;
+    if (!qDirtyRef.current) return;
+    if (normalized.filters.q === q) return;
     const handle = window.setTimeout(() => {
       apply({ q, page: 1 });
     }, 350);
     return () => window.clearTimeout(handle);
-  }, [apply, q, showSearch]);
+  }, [apply, normalized.filters.q, q, showSearch]);
 
   return (
     <div
