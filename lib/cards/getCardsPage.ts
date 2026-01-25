@@ -154,7 +154,15 @@ export async function getCardsPage(args: {
     }
 
     // Sorting
-    if (filters.sort === "oldest") {
+    if (filters.sort === "price_desc") {
+      query = query
+        .order("price_cents", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false });
+    } else if (filters.sort === "price_asc") {
+      query = query
+        .order("price_cents", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false });
+    } else if (filters.sort === "oldest") {
       query = query.order("created_at", { ascending: true });
     } else if (filters.sort === "year_desc") {
       query = query

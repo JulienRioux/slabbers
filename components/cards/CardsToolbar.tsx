@@ -19,6 +19,8 @@ import {
 } from "@/lib/cards/searchParams";
 
 const SORT_LABEL: Record<CardsSort, string> = {
+  price_desc: "Price ↓",
+  price_asc: "Price ↑",
   newest: "Newest",
   oldest: "Oldest",
   year_desc: "Year ↓",

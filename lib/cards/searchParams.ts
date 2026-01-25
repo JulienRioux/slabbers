@@ -1,4 +1,10 @@
-export type CardsSort = "newest" | "oldest" | "year_desc" | "year_asc";
+export type CardsSort =
+  | "price_desc"
+  | "price_asc"
+  | "newest"
+  | "oldest"
+  | "year_desc"
+  | "year_asc";
 
 export type CardsFilters = {
   q: string;
@@ -57,11 +63,13 @@ function parseOptionalTrimmedString(value: string | null): string | null {
 }
 
 function parseSort(value: string | null): CardsSort {
+  if (value === "price_desc") return "price_desc";
+  if (value === "price_asc") return "price_asc";
   if (value === "newest") return "newest";
   if (value === "oldest") return "oldest";
   if (value === "year_desc") return "year_desc";
   if (value === "year_asc") return "year_asc";
-  return "newest";
+  return "price_desc";
 }
 
 export function normalizeCardsSearchParams(
@@ -218,7 +226,8 @@ export function buildCardsSearchParams(next: {
   }
 
   if (next.sort !== undefined) {
-    if (next.sort && next.sort !== "newest") params.set("sort", next.sort);
+    if (next.sort && next.sort !== "price_desc")
+      params.set("sort", next.sort);
     else params.delete("sort");
   }
 

@@ -40,11 +40,13 @@ function parseOptionalTrimmedString(value: string | null): string | null {
 }
 
 function parseSort(value: string | null): CardsSort {
+  if (value === "price_desc") return "price_desc";
+  if (value === "price_asc") return "price_asc";
   if (value === "newest") return "newest";
   if (value === "oldest") return "oldest";
   if (value === "year_desc") return "year_desc";
   if (value === "year_asc") return "year_asc";
-  return "newest";
+  return "price_desc";
 }
 
 export async function GET(request: Request) {
