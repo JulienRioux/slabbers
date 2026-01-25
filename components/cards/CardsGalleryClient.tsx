@@ -1,12 +1,11 @@
 "use client";
 
-import useSWR from "swr";
+import useSWRInfinite from "swr/infinite";
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 
 import { CardsFilters } from "@/components/cards/CardsFilters";
 import { CardsGrid, type CardRow } from "@/components/cards/CardsGrid";
-import { CardsPaginationClient } from "@/components/cards/CardsPaginationClient";
 import { CardsSearchSort } from "@/components/cards/CardsSearchSort";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -25,19 +24,25 @@ const fetcher = async (url: string): Promise<CardsPageResult> => {
   return res.json();
 };
 
-function CardsGridSkeleton({ count = 12 }: { count?: number }) {
+function CardsGridSkeleton({ count = 8 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(360px,1fr))] justify-items-center gap-6">
+    <div className="grid w-full grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] items-start justify-items-start gap-6">
       {Array.from({ length: count }).map((_, idx) => (
         <div
           key={idx}
-          className="grid w-full max-w-[360px] gap-3 rounded-none bg-card p-2"
+          className="group relative grid w-full max-w-[240px] gap-3 rounded-none border border-transparent bg-card"
         >
           <Skeleton className="aspect-[5/7] w-full rounded-none" />
-          <div className="grid gap-2">
-            <Skeleton className="h-5 w-3/4" />
+          <div className="grid gap-3">
+            <Skeleton className="h-5 w-4/5" />
             <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-4 w-2/3" />
+            <div className="flex items-center justify-between gap-3">
+              <Skeleton className="h-4 w-1/3" />
+              <div className="flex gap-1">
+                <Skeleton className="h-4 w-10" />
+                <Skeleton className="h-4 w-8" />
+              </div>
+            </div>
           </div>
         </div>
       ))}
@@ -56,16 +61,64 @@ export function CardsGalleryClient({
 }) {
   const searchParams = useSearchParams();
 
-  const key = React.useMemo(() => {
+  const baseParams = React.useMemo(() => {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
     if (userId) params.set("userId", userId);
-    return `/api/cards/search?${params.toString()}`;
+    return params.toString();
   }, [searchParams, userId]);
 
-  const { data, isLoading } = useSWR(key, fetcher, {
-    keepPreviousData: true,
-    revalidateOnFocus: false,
-  });
+
+  const getKey = React.useCallback(
+    (pageIndex: number, previousPage: CardsPageResult | null) => {
+      if (previousPage && !previousPage.hasNext) return null;
+      const params = new URLSearchParams(baseParams);
+      params.set("page", String(pageIndex + 1));
+      return `/api/cards/search?${params.toString()}`;
+    },
+    [baseParams],
+  );
+
+  const { data, isLoading, isValidating, size, setSize } = useSWRInfinite(
+    getKey,
+    fetcher,
+    {
+      keepPreviousData: true,
+      persistSize: true,
+      revalidateFirstPage: false,
+      revalidateOnFocus: false,
+    },
+  );
+
+
+  const pages = data ?? [];
+  const items = React.useMemo(
+    () => pages.flatMap((page) => page.items),
+    [pages],
+  );
+  const lastPage = pages[pages.length - 1];
+  const hasNext = lastPage?.hasNext ?? false;
+  const isLoadingMore = isValidating && size > 0 && pages.length > 0;
+
+  const loadMore = React.useCallback(() => {
+    if (!hasNext || isLoadingMore) return;
+    setSize(size + 1);
+  }, [hasNext, isLoadingMore, setSize, size]);
+
+  const sentinelRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !hasNext) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMore();
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasNext, loadMore]);
 
   return (
     <div className="lg:flex lg:gap-6">
@@ -79,25 +132,18 @@ export function CardsGalleryClient({
         <div className="grid gap-6">
           <CardsSearchSort />
 
-          {isLoading ? (
+          {isLoading && pages.length === 0 ? (
             <CardsGridSkeleton />
           ) : (
             <CardsGrid
-              cards={data?.items}
+              cards={items}
               emptyTitle={emptyTitle}
               emptyDescription={emptyDescription}
             />
           )}
 
-          {data ? (
-            <CardsPaginationClient
-              page={data.page}
-              pageSize={data.pageSize}
-              total={data.total}
-              hasPrev={data.hasPrev}
-              hasNext={data.hasNext}
-            />
-          ) : null}
+          {isLoadingMore ? <CardsGridSkeleton count={6} /> : null}
+          <div ref={sentinelRef} />
         </div>
       </div>
     </div>

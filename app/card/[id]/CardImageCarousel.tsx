@@ -29,31 +29,28 @@ export function CardImageCarousel({
         opts={{ loop: hasMany }}
         aria-label={hasMany ? "Card image carousel" : "Card image"}
       >
-        <div className="relative aspect-[5/7] w-full overflow-hidden border border-border bg-card">
-          <div className="absolute inset-0">
-            <CarouselContent className="-ml-0 h-full">
-              {slides.map((src, slideIndex) => (
-                <CarouselItem
-                  key={`${src}-${slideIndex}`}
-                  className="pl-0 h-full"
-                >
-                  {src ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+        <div className="relative w-full overflow-hidden border border-border bg-card">
+          <CarouselContent className="-ml-0">
+            {slides.map((src, slideIndex) => (
+              <CarouselItem key={`${src}-${slideIndex}`} className="pl-0">
+                {src ? (
+                  <div className="flex w-full items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={src}
                       alt={title}
-                      className="h-full w-full object-cover"
+                      className="h-auto w-full object-contain"
                       draggable={false}
                     />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-                      No image
-                    </div>
-                  )}
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-          </div>
+                  </div>
+                ) : (
+                  <div className="flex aspect-[5/7] w-full items-center justify-center text-sm text-muted-foreground">
+                    No image
+                  </div>
+                )}
+              </CarouselItem>
+            ))}
+          </CarouselContent>
 
           {hasMany ? (
             <>
